@@ -45,6 +45,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'タイトルと画像は必須です。' }, { status: 400 });
     }
 
+    if (tags.length === 0) {
+      return NextResponse.json({ error: 'タグは最低1つ必須です。' }, { status: 400 });
+    }
+
     const uploadedImages: any[] = [];
     const uploadedFilePaths: string[] = [];
 

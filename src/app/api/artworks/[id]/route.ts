@@ -9,12 +9,33 @@ import Bookmark from '@/models/bookmark';
 import { bucket } from '@/lib/gcs';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
 
-// ... GETメソッドは変更なし ...
 export async function GET(req: Request, { params }: { params: { id: string } }) {
-    // ...
-}
+    try {
+      await dbConnect();
+  
+      const artwork = await Artwork.findById(params.id).populate({
+        path: 'userId',
+        select: 'username',
+        model: User,
+      });
+  
+      if (!artwork) {
+        return NextResponse.json({ error: '作品が見つかりません。' }, { status: 404 });
+      }
+      
+      const artworkObject = artwork.toObject();
+      if (artwork.isAnonymous) {
+        delete artworkObject.userId;
+      }
+  
+      return NextResponse.json(artworkObject);
+  
+    } catch (error) {
+      console.error('Failed to fetch artwork:', error);
+      return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });
+    }
+  }
 
 /**
  * 作品を削除するAPI
@@ -24,8 +45,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     session.startTransaction();
     try {
         const JWT_SECRET = process.env.JWT_SECRET!;
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value;
+        const authHeader = req.headers.get('authorization');
+        const token = authHeader?.split(' ')[1];
 
         if (!token) {
             return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });

@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = 10000; //todo:ページネーション実装したい
+    const limit = 1000; //todo:ページネーション実装したい
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
     const userId = decoded.id;
@@ -31,11 +31,18 @@ export async function GET(req: Request) {
     }
     const mutedTags = user.mutedTags || [];
 
-    const artworks = await Artwork.find({}) 
+    const query: any = {
+      tags: { $nin: mutedTags },
+    };
+
+    if (!user.showNSFW) {
+      query.isNSFW = false;
+    }
+
+    const artworks = await Artwork.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .where('tags', { $nin: mutedTags })
       .populate({
         path: 'userId',
         select: 'username',

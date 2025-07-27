@@ -23,13 +23,18 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { username, fullName, password } = await req.json();
+    const { username, fullName, password, sharedPassword } = await req.json();
 
     if (!username || !fullName || !password) {
       return NextResponse.json(
         { error: '必須項目が入力されていません。' },
         { status: 400 }
       );
+    }
+
+
+    if (sharedPassword !== process.env.SHARED_PASSWORD) {
+      return NextResponse.json({ error: '共有パスワードが正しくありません。' }, { status: 403 });
     }
     
     const existingUser = await User.findOne({ fullName });

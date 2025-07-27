@@ -51,20 +51,25 @@ export default function Comments({ artworkId }: { artworkId: string }) {
   };
 
   return (
-    <div className="mt-8 pt-6 border-t">
-      <h3 className="text-xl font-semibold mb-4">コメント</h3>
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-gray-900">コメント ({comments.length})</h3>
+      
       {/* コメント投稿フォーム */}
-      <form onSubmit={handleSubmit} className="mb-6">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="コメントを追加..."
-          className="w-full p-2 border rounded-md"
+          className="input-field w-full resize-none"
           rows={3}
         />
-        <div className="text-right mt-2">
-          <button type="submit" disabled={isPosting} className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:bg-gray-400">
-            {isPosting ? '投稿中...' : '投稿する'}
+        <div className="flex justify-end">
+          <button 
+            type="submit" 
+            disabled={isPosting || !newComment.trim()} 
+            className="btn-primary text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {isPosting ? '投稿中...' : 'コメントする'}
           </button>
         </div>
       </form>
@@ -72,21 +77,43 @@ export default function Comments({ artworkId }: { artworkId: string }) {
       {/* コメント一覧 */}
       <div className="space-y-4">
         {isLoading ? (
-          <p>コメントを読み込み中...</p>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-sm text-gray-500">コメントを読み込み中...</p>
+          </div>
         ) : comments.length > 0 ? (
           comments.map(comment => (
-            <div key={comment._id} className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center mb-2">
-                <p className="font-semibold text-sm">{comment.userId.username}</p>
-                <p className="text-xs text-gray-500 ml-2">
-                  {new Date(comment.createdAt).toLocaleString('ja-JP')}
-                </p>
+            <div key={comment._id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-blue-600">
+                  {comment.userId.username.charAt(0).toUpperCase()}
+                </span>
               </div>
-              <p className="text-gray-800">{comment.text}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <p className="font-semibold text-sm text-gray-900">{comment.userId.username}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(comment.createdAt).toLocaleString('ja-JP', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">{comment.text}</p>
+              </div>
             </div>
           ))
         ) : (
-          <p className="text-gray-500">まだコメントはありません。</p>
+          <div className="text-center py-8">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <p className="text-gray-500 font-medium">まだコメントはありません</p>
+            <p className="text-sm text-gray-400">最初のコメントを投稿してみましょう</p>
+          </div>
         )}
       </div>
     </div>

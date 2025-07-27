@@ -20,15 +20,9 @@ export default function FollowingArtworkList() {
 
   useEffect(() => {
     const fetchArtworks = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const res = await fetch('/api/timeline/following', {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
         });
         if (res.ok) {
           const data = await res.json();
@@ -55,7 +49,9 @@ export default function FollowingArtworkList() {
     <div className="space-y-8">
       {userArtworks.map((group) => (
         <div key={group.user._id}>
-          <h2 className="text-xl font-bold mb-4">{group.user.username}</h2>
+          <Link href={`/users/${group.user.username}`} className="hover:underline">
+            <h2 className="text-xl font-bold mb-4">{group.user.username}</h2>
+          </Link>
           {/* 横スクロール用のコンテナ */}
           <div className="flex space-x-4 overflow-x-auto pb-4">
             {group.artworks.map((artwork) => (
@@ -69,7 +65,6 @@ export default function FollowingArtworkList() {
                       className="h-full w-full object-cover object-center transition-transform group-hover:scale-105"
                     />
                   </div>
-                  <h3 className="mt-2 text-sm font-semibold text-gray-800 truncate">{artwork.title}</h3>
                 </Link>
               </div>
             ))}
