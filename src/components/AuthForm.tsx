@@ -8,9 +8,10 @@ type Props = {
 };
 
 export default function AuthForm({ isRegister }: Props) {
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState(''); // ユーザー名 or 本名
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
+  const [sharedPassword, setSharedPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -19,7 +20,10 @@ export default function AuthForm({ isRegister }: Props) {
     setError('');
 
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-    const body = isRegister ? { username, fullName, password } : { fullName, password };
+    
+    const body = isRegister
+      ? { username: identifier, fullName, password, sharedPassword }
+      : { identifier, password, sharedPassword };  
 
     try {
       const res = await fetch(endpoint, {
@@ -28,14 +32,11 @@ export default function AuthForm({ isRegister }: Props) {
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json();
         setError(data.error || 'エラーが発生しました。');
         return;
       }
-
-      localStorage.setItem('token', data.token);
 
       router.push('/');
       router.refresh();
@@ -49,39 +50,28 @@ export default function AuthForm({ isRegister }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto p-8 border rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-center">{isRegister ? '新規登録' : 'ログイン'}</h2>
       
-      {isRegister && (
+      {isRegister ? (
+        <>
+          <div>
+          <label className="block mb-1 font-medium">ユーザー名または本名</label>
+            <input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required className="w-full px-3 py-2 border rounded-md" />
+          </div>
+        </>
+      ) : (
         <div>
-          <label className="block mb-1 font-medium">ユーザー名</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className="w-full px-3 py-2 border rounded-md"
-          />
+          <label className="block mb-1 font-medium">ユーザー名または本名</label>
+          <input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required className="w-full px-3 py-2 border rounded-md" />
         </div>
       )}
 
       <div>
-        <label className="block mb-1 font-medium">フルネーム（本名、漢字で入力してください）</label>
-        <input
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-          className="w-full px-3 py-2 border rounded-md"
-        />
+        <label className="block mb-1 font-medium">パスワード</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full px-3 py-2 border rounded-md" />
       </div>
 
       <div>
-        <label className="block mb-1 font-medium">パスワード</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full px-3 py-2 border rounded-md"
-        />
+        <label className="block mb-1 font-medium">共有パスワード</label>
+        <input type="password" value={sharedPassword} onChange={(e) => setSharedPassword(e.target.value)} required className="w-full px-3 py-2 border rounded-md" />
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}

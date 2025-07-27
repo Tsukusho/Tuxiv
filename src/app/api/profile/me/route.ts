@@ -25,15 +25,24 @@ export async function GET(req: Request) {
 
     await dbConnect();
 
-    const [user, followerCount, artworks] = await Promise.all([
-      User.findById(userId).select('username').lean<IUserData>(), 
-      Follow.countDocuments({ followingId: userId }),
-      Artwork.find({ userId }).sort({ createdAt: -1 }).lean() 
-    ]);
+    // 1. まずユーザー情報を取得してNSFW設定を確認
+    const user = await User.findById(userId).select('username showNSFW').lean<IUserData>();
 
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
     }
+
+    // 2. NSFW設定を基に、作品検索のクエリを作成
+    const artworkQuery: any = { userId };
+    if (!user.showNSFW) {
+      artworkQuery.isNSFW = false;
+    }
+    
+    // 3. フォロワー数と作品一覧を並行して取得
+    const [followerCount, artworks] = await Promise.all([
+      Follow.countDocuments({ followingId: userId }),
+      Artwork.find(artworkQuery).sort({ createdAt: -1 }).lean() 
+    ]);
 
     // 投稿一覧に署名付きURLを追加
     const artworksWithSignedUrls = await Promise.all(

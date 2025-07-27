@@ -35,19 +35,10 @@ export default function ArtworkForm() {
       formData.append('images', file);
     });
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('ログインが必要です。');
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
       const res = await fetch('/api/artworks', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
       });
 
@@ -95,11 +86,12 @@ export default function ArtworkForm() {
       </div>
 
       <div>
-        <label htmlFor="tags" className="block mb-2 font-semibold text-gray-700">タグ (カンマ区切り)</label>
+        <label htmlFor="tags" className="block mb-2 font-semibold text-gray-700">タグ (こちらで検索/検索避けを行うのでできるだけ多く入力してください。)</label>
         <input
           id="tags" type="text" value={tags} onChange={(e) => setTags(e.target.value)}
-          placeholder="例: オリジナル, 風景, 女の子"
+          placeholder="半角カンマ区切りで入力してください。例：やが君,やがて君になる"
           className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+          required
         />
       </div>
 

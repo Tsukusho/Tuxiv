@@ -5,6 +5,7 @@ export interface IUserData {
   username: string;
   fullName: string;
   mutedTags?: string[];
+  showNSFW?: boolean;
 }
 
 // Mongoose DocumentとしてのUserの型
@@ -13,6 +14,7 @@ export interface IUser extends Document {
   fullName: string;
   hashedPassword: string;
   mutedTags?: string[];
+  showNSFW?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,10 @@ const UserSchema: Schema = new Schema({
   mutedTags: {
     type: [String],
     default: [],
+  },
+  showNSFW: {
+    type: Boolean,
+    default: false,
   },
 }, { timestamps: true });
 

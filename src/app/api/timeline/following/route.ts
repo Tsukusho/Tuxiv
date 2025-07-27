@@ -44,7 +44,7 @@ export async function GET(req: Request) {
             isAnonymous: false,
         })
         .sort({ createdAt: -1 })
-        .limit(10); // 各ユーザーごとに最新10件を取得 全件は一旦しない
+        .limit(100); // 各ユーザーごとに最新10件を取得 全件は一旦しない
 
         if (artworks.length === 0) return null;
 

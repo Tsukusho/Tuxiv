@@ -1,4 +1,4 @@
-import ArtworkList from "@/components/ArtworkList";
+import SearchResultsList from "@/components/SearchResultsList";
 import { Suspense } from "react";
 
 type Props = {
@@ -26,6 +26,5 @@ export default function SearchPage({ searchParams }: Props) {
 }
 
 async function SearchResults({ tags }: { tags: string }) {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/artworks/search?tags=${encodeURIComponent(tags)}`;
-    return <ArtworkList apiUrl={apiUrl} />;
+    return <SearchResultsList tags={tags} />;
 }
