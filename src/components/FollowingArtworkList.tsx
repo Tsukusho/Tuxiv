@@ -21,9 +21,10 @@ export default function FollowingArtworkList() {
   useEffect(() => {
     const fetchArtworks = async () => {
       try {
-        const res = await fetch('/api/timeline/following', {
-          headers: { 'Content-Type': 'application/json' },
-        });
+              const res = await fetch('/api/timeline/following', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
         if (res.ok) {
           const data = await res.json();
           setUserArtworks(data.userArtworks); 

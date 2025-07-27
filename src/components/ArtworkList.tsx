@@ -57,7 +57,10 @@ export default async function ArtworkList() {
         model: User,
       });
 
-    const signedUrlPromises = artworks.map(artwork => {
+    // 削除済みユーザーの投稿を除外
+    const validArtworks = artworks.filter(artwork => artwork.userId !== null);
+
+    const signedUrlPromises = validArtworks.map(artwork => {
       if (artwork.images && artwork.images.length > 0) {
         return bucket.file(artwork.images[0].path).getSignedUrl({
           version: 'v4',
@@ -70,7 +73,7 @@ export default async function ArtworkList() {
 
     const signedUrls = await Promise.all(signedUrlPromises);
     
-    artworksWithSignedUrls = artworks.map((artwork, index) => ({
+    artworksWithSignedUrls = validArtworks.map((artwork, index) => ({
       ...JSON.parse(JSON.stringify(artwork)),
       thumbnailUrl: signedUrls[index],
     }));
@@ -110,19 +113,34 @@ export default async function ArtworkList() {
                 {artwork.title}
               </h3>
               <div className="flex items-center justify-between">
-                {!artwork.isAnonymous && artwork.userId && (
+                {!artwork.isAnonymous && (
                   <div className="flex items-center space-x-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-xs font-bold text-gray-600">
-                        {artwork.userId.username.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <Link 
-                      href={`/users/${artwork.userId.username}`} 
-                      className="text-xs text-gray-500 hover:text-blue-600 hover:underline transition-colors break-words"
-                    >
-                      {artwork.userId.username}
-                    </Link>
+                    {artwork.userId ? (
+                      <>
+                        <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-xs font-bold text-gray-600">
+                            {artwork.userId.username.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <Link 
+                          href={`/users/${artwork.userId.username}`} 
+                          className="text-xs text-gray-500 hover:text-blue-600 hover:underline transition-colors break-words"
+                        >
+                          {artwork.userId.username}
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-gray-400">
+                            削
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 italic break-words">
+                          削除済みユーザー
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
                 <div className="flex items-center space-x-3 text-xs text-gray-500">

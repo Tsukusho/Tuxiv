@@ -17,6 +17,7 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
       try {
         const res = await fetch(`/api/artworks/${artworkId}/like`, {
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
         });
         if (res.ok) {
           const data = await res.json();
@@ -50,6 +51,7 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
       const res = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!res.ok) {

@@ -39,9 +39,12 @@ export async function GET() {
     // populateしたartworkIdから作品情報だけを取り出す
     const artworks = bookmarks.map(b => b.artworkId);
 
+    // 削除済みユーザーの投稿を除外
+    const validArtworks = artworks.filter(artwork => artwork && artwork.userId);
+
     // 署名付きURLを生成
     const artworksWithSignedUrls = await Promise.all(
-        artworks.map(async (artwork) => {
+        validArtworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({

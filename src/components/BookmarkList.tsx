@@ -11,16 +11,11 @@ export default function BookmarkList() {
 
   useEffect(() => {
     const fetchBookmarks = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        const res = await fetch('/api/users/me/bookmarks', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+              const res = await fetch('/api/users/me/bookmarks', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
         if (res.ok) {
           const data = await res.json();
           setArtworks(data.artworks); 

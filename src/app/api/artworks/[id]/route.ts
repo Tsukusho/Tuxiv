@@ -6,6 +6,7 @@ import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import Like from '@/models/like';
 import Bookmark from '@/models/bookmark';
+import Comment from '@/models/comment';
 import { bucket } from '@/lib/gcs';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
@@ -84,6 +85,7 @@ export async function DELETE(
         // 2. 関連データを削除
         await Like.deleteMany({ artworkId }).session(session);
         await Bookmark.deleteMany({ artworkId }).session(session);
+        await Comment.deleteMany({ artworkId }).session(session); // コメントも削除
 
         // 3. 作品自体を削除
         await Artwork.findByIdAndDelete(artworkId).session(session);

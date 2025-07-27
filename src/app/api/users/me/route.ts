@@ -7,6 +7,7 @@ import Artwork from '@/models/artwork';
 import Like from '@/models/like';
 import Bookmark from '@/models/bookmark';
 import Follow from '@/models/follow';
+import Comment from '@/models/comment';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
@@ -123,13 +124,24 @@ export async function DELETE() {
             artwork.images.map((image: {path: string}) => bucket.file(image.path).delete())
         );
         await Promise.all(deletePromises);
+        
+        // 投稿関連データの削除
         if (artworkIds.length > 0) {
             await Like.deleteMany({ artworkId: { $in: artworkIds } }).session(session);
             await Bookmark.deleteMany({ artworkId: { $in: artworkIds } }).session(session);
+            // 投稿に紐づくコメントも削除
+            await Comment.deleteMany({ artworkId: { $in: artworkIds } }).session(session);
         }
+        
+        // ユーザー関連データの削除
         await Like.deleteMany({ userId }).session(session);
         await Bookmark.deleteMany({ userId }).session(session);
         await Follow.deleteMany({ $or: [{ followerId: userId }, { followingId: userId }] }).session(session);
+        
+        // ユーザーが投稿したコメントは「削除済みユーザー」として残すため削除しない
+        // もしコメントも削除したい場合は以下の行のコメントを外してください
+        // await Comment.deleteMany({ userId }).session(session);
+        
         await Artwork.deleteMany({ userId }).session(session);
         await User.findByIdAndDelete(userId).session(session);
         
