@@ -10,10 +10,12 @@ import { cookies } from 'next/headers';
 /**
  * 作品のコメント一覧を取得するAPI
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+type RouteContext = { params: { id: string } }
+
+export async function GET(req: Request, context: RouteContext) {
   try {
     await dbConnect();
-    const artworkId = params.id;
+            const artworkId = context.params.id;
 
     const comments = await Comment.find({ artworkId })
       .sort({ createdAt: -1 }) // 新しい順
@@ -31,7 +33,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }/**
  * 作品にコメントを投稿するAPI
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, context: RouteContext) {
     try {
       const JWT_SECRET = process.env.JWT_SECRET!;
       const cookieStore = await cookies();
@@ -43,7 +45,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   
       const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
       const userId = decoded.id;
-      const artworkId = params.id;
+      const artworkId = context.params.id;
       const { text } = await req.json();
   
       if (!text || text.trim() === '') {

@@ -5,7 +5,9 @@ import Follow from '@/models/follow';
 import jwt from 'jsonwebtoken';
 
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+type RouteContext = { params: { id: string } }
+
+export async function GET(req: Request, context: RouteContext) {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -17,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
     const followerId = decoded.id;
-    const followingId = params.id;
+    const followingId = context.params.id;
 
     await dbConnect();
     const existingFollow = await Follow.findOne({ followerId, followingId });
@@ -28,7 +30,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ isFollowing: false });
   }
 }
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, context: RouteContext) {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -40,7 +42,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
     const followerId = decoded.id; 
-    const followingId = params.id; 
+    const followingId = context.params.id; 
 
     if (followerId === followingId) {
       return NextResponse.json({ error: '自分自身をフォローすることはできません。' }, { status: 400 });
@@ -62,7 +64,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });
   }
 }
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, context: RouteContext) {
     try {
         const JWT_SECRET = process.env.JWT_SECRET!;
         const cookieStore = await cookies();
@@ -72,10 +74,10 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
           return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
         }
     
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+                const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
         const followerId = decoded.id;
-        const followingId = params.id;
-    
+        const followingId = context.params.id;
+
         await dbConnect();
     
         const result = await Follow.deleteOne({ followerId, followingId });
