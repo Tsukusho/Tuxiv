@@ -24,19 +24,21 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { fullName, password } = await req.json() as { fullName?: string; password?: string; };
+    const { identifier, password, sharedPassword } = await req.json();
 
-    if (!fullName || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
         { error: 'フルネームとパスワードを入力してください。' },
         { status: 400 }
       );
     }
     
-    const user = await User.findOne({ fullName });
+    const user = await User.findOne({
+      $or: [{ username: identifier }, { fullName: identifier }],
+    });
     if (!user) {
       return NextResponse.json(
-        { error: 'フルネームまたはパスワードが正しくありません。' },
+        { error: 'ユーザー名または本名と、パスワードを入力してください。' },
         { status: 401 }
       );
     }
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
     const isPasswordMatch = await bcrypt.compare(password, user.hashedPassword);
     if (!isPasswordMatch) {
       return NextResponse.json(
-        { error: 'フルネームまたはパスワードが正しくありません。' },
+        { error: 'ユーザー名または本名と、パスワードを入力してください。' },
         { status: 401 }
       );
     }

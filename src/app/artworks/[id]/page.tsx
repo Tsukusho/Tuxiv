@@ -7,9 +7,10 @@ import { notFound } from "next/navigation";
 import { bucket } from '@/lib/gcs';
 import ArtworkActions from "@/components/ArtworkActions";
 import Comments from "@/components/Comments";
-import Link from 'next/link';
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+import Link from "next/link";
 
-// データ取得ロジックはサーバーコンポーネントに残す
 async function getArtwork(id: string): Promise<IArtworkData | null> {
   try {
     await dbConnect();
@@ -45,9 +46,22 @@ async function getArtwork(id: string): Promise<IArtworkData | null> {
   }
 }
 
-// ページコンポーネントはサーバーコンポーネントのまま
 export default async function ArtworkDetailPage({ params }: { params: { id: string } }) {
   const artwork = await getArtwork(params.id);
+  
+  let loggedInUserId: string | null = null;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+      loggedInUserId = decoded.id;
+    }
+  } catch (error) {
+    console.log("Token verification failed, user is not logged in.");
+  }
+  
+  const isOwner = artwork?.userId?._id === loggedInUserId;
 
   if (!artwork) {
     notFound();
@@ -55,7 +69,7 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden max-w-5xl mx-auto">
         {/* 画像表示エリア */}
         <div className="bg-gray-200">
           {artwork.images.map((image, index) => (
@@ -70,8 +84,7 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
 
         {/* 作品情報エリア */}
         <div className="p-6">
-          {/* ★UI部分をArtworkActionsコンポーネントに任せる */}
-          <ArtworkActions artwork={artwork} />
+          <ArtworkActions artwork={artwork} isOwner={isOwner} />
 
           {/* タグ表示 */}
           <div className="flex flex-wrap gap-2 mb-4">
@@ -88,6 +101,7 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
 
           {/* 説明文 */}
           <p className="text-gray-700 whitespace-pre-wrap">{artwork.description}</p>
+          
           <Comments artworkId={artwork._id} />
         </div>
       </div>

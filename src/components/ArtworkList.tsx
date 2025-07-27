@@ -1,46 +1,74 @@
 import { IArtworkData } from '@/models/artwork';
 import { bucket } from '@/lib/gcs';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+import dbConnect from '@/lib/dbConnect';
+import Artwork from '@/models/artwork';
+import User from '@/models/user';
+import { IUserData } from '@/models/user'; 
 
-type ApiResponse = {
-  artworks: IArtworkData[];
-  totalPages: number;
-  currentPage: number;
-};
 
-type Props = {
-  apiUrl: string;
-}
+const limitPostsNum = 1000; //todo:ページネーション実装したい
 
-export default async function ArtworkList({ apiUrl }: Props) {
+// NOTE: サーバーコンポーネントとして、直接データを取得する
+export default async function ArtworkList() {
   let artworksWithSignedUrls: (IArtworkData & { thumbnailUrl: string })[] = [];
 
   try {
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-    });
-    
-    if (res.ok) {
-      const data: ApiResponse = await res.json();
-      
-      const signedUrlPromises = data.artworks.map(artwork => {
-        if (artwork.images && artwork.images.length > 0) {
-          return bucket.file(artwork.images[0].path).getSignedUrl({
-            version: 'v4',
-            action: 'read',
-            expires: Date.now() + 15 * 60 * 1000,
-          }).then(urls => urls[0]);
+    await dbConnect();
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
+    let mutedTags: string[] = [];
+    let query: any = {};
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+        const user = await User.findById(decoded.id).lean<IUserData>();
+        if (user) {
+          mutedTags = user.mutedTags || [];
+          if (!user.showNSFW) {
+            query.isNSFW = false;
+          } else {
+            query.isNSFW = false;
+          }
         }
-        return Promise.resolve('');
+      } catch (e) {
+        console.log("Invalid token, proceeding as guest.");
+      }
+    }
+    if (mutedTags.length > 0) {
+      query.tags = { $nin: mutedTags };
+    }
+
+    const artworks = await Artwork.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limitPostsNum) 
+      .populate({
+        path: 'userId',
+        select: 'username',
+        model: User,
       });
 
-      const signedUrls = await Promise.all(signedUrlPromises);
-      
-      artworksWithSignedUrls = data.artworks.map((artwork, index) => ({
-        ...artwork,
-        thumbnailUrl: signedUrls[index],
-      }));
-    }
+    const signedUrlPromises = artworks.map(artwork => {
+      if (artwork.images && artwork.images.length > 0) {
+        return bucket.file(artwork.images[0].path).getSignedUrl({
+          version: 'v4',
+          action: 'read',
+          expires: Date.now() + 15 * 60 * 1000,
+        }).then(urls => urls[0]);
+      }
+      return Promise.resolve('');
+    });
+
+    const signedUrls = await Promise.all(signedUrlPromises);
+    
+    artworksWithSignedUrls = artworks.map((artwork, index) => ({
+      ...JSON.parse(JSON.stringify(artwork)),
+      thumbnailUrl: signedUrls[index],
+    }));
+
   } catch (error) {
     console.error("Failed to fetch artworks:", error);
   }
@@ -61,8 +89,10 @@ export default async function ArtworkList({ apiUrl }: Props) {
             />
           </div>
           <h3 className="mt-2 text-sm font-semibold text-gray-800">{artwork.title}</h3>
-          {!artwork.isAnonymous && (
-            <p className="mt-1 text-xs text-gray-500">by {artwork.userId.username}</p>
+          {!artwork.isAnonymous && artwork.userId && (
+            <p className="mt-1 text-xs text-gray-500">
+              by <Link href={`/users/${artwork.userId.username}`} className="hover:underline">{artwork.userId.username}</Link>
+            </p>
           )}
         </Link>
       ))}

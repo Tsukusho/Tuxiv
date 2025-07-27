@@ -8,6 +8,7 @@ export default function SettingsPage() {
   const [password, setPassword] = useState('');
   const [mutedTags, setMutedTags] = useState('');
   const [message, setMessage] = useState('');
+  const [showNSFW, setShowNSFW] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -18,12 +19,13 @@ export default function SettingsPage() {
         const data = await res.json();
         setFullName(data.fullName);
         setMutedTags(data.mutedTags.join(', '));
+        setShowNSFW(data.showNSFW);
       }
     };
     fetchUserData();
   }, []);
 
-  const handleUpdate = async (e: React.FormEvent, field: 'fullName' | 'password' | 'mutedTags') => {
+  const handleUpdate = async (e: React.FormEvent, field: 'fullName' | 'password' | 'mutedTags' | 'showNSFW') => {
     e.preventDefault();
     setMessage('');
     
@@ -32,6 +34,7 @@ export default function SettingsPage() {
         case 'fullName': body = { fullName }; break;
         case 'password': body = { password }; break;
         case 'mutedTags': body = { mutedTags: mutedTags.split(',').map(t => t.trim()) }; break;
+        case 'showNSFW': body = { showNSFW }; break;
     }
 
     const res = await fetch('/api/users/me', {
@@ -90,6 +93,24 @@ export default function SettingsPage() {
           <input type="text" value={mutedTags} onChange={(e) => setMutedTags(e.target.value)} className="w-full px-3 py-2 border rounded-md mb-2" />
           <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">更新</button>
         </form>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-2">コンテンツ表示設定</h2>
+          <div className="flex items-center space-x-3">
+            <input 
+              id="show-nsfw"
+              type="checkbox" 
+              checked={showNSFW} 
+              onChange={(e) => {
+                setShowNSFW(e.target.checked);
+                // NOTE: チェックボックスは即時反映させるため、onChangeイベントで直接更新APIを呼ぶ
+                handleUpdate(e, 'showNSFW');
+              }} 
+              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="show-nsfw" className="text-gray-700">NSFWコンテンツを表示する</label>
+          </div>
+        </div>
         
         <div>
             <h2 className="text-xl font-semibold mb-2 text-red-600">アカウント削除</h2>
