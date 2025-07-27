@@ -14,14 +14,9 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
 
   useEffect(() => {
     const checkLikeStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setIsLiked(false);
-        return;
-      }
       try {
         const res = await fetch(`/api/artworks/${artworkId}/like`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
         });
         if (res.ok) {
           const data = await res.json();
@@ -41,12 +36,6 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
     if (isLiked === null) return; // 状態が未確定の場合は何もしない
 
     setIsLoading(true);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('いいねするにはログインが必要です。');
-      setIsLoading(false);
-      return;
-    }
 
     const previousLikeState = isLiked;
     const previousLikeCount = likeCount;
@@ -60,7 +49,7 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
     try {
       const res = await fetch(endpoint, {
         method,
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!res.ok) {
@@ -83,10 +72,12 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
   // いいね状態がまだ不明な場合は、ボタンを無効化
   if (isLiked === null) {
     return (
-        <button disabled className="px-4 py-2 rounded-full font-semibold flex items-center space-x-2 bg-gray-200 opacity-50">
-            <span>❤️</span>
-            <span>{likeCount}</span>
-        </button>
+      <button disabled className="flex items-center space-x-2 px-4 py-2 rounded-full font-semibold bg-gray-100 text-gray-400 cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+        <span>{likeCount}</span>
+      </button>
     );
   }
 
@@ -94,13 +85,22 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
     <button
       onClick={handleLike}
       disabled={isLoading}
-      className={`px-4 py-2 rounded-full font-semibold transition-colors flex items-center space-x-2 disabled:opacity-50 ${
+      className={`flex items-center space-x-2 px-4 py-2 rounded-full font-semibold transition-all duration-200 disabled:opacity-50 ${
         isLiked
-          ? 'bg-pink-500 text-white'
-          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+          ? 'bg-red-50 text-red-600 hover:bg-red-100'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
       }`}
     >
-      <span>❤️</span>
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        className="h-5 w-5" 
+        fill={isLiked ? "currentColor" : "none"} 
+        viewBox="0 0 24 24" 
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
       <span>{likeCount}</span>
     </button>
   );
