@@ -71,7 +71,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 /**
  * 作品のいいねを解除するAPI
  */
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+type RouteContext = { params: { id: string } }
+
+export async function DELETE(req: Request, context: RouteContext) {
     try {
         const JWT_SECRET = process.env.JWT_SECRET!;
         const cookieStore = await cookies();
@@ -83,7 +85,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
         const userId = decoded.id;
-        const artworkId = params.id;
+        const artworkId = context.params.id;
     
         await dbConnect();
     
