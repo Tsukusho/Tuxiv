@@ -25,22 +25,55 @@ export async function POST(req: Request) {
 
     const { username, fullName, password, sharedPassword } = await req.json();
 
+    // 必須項目のチェック
     if (!username || !fullName || !password) {
       return NextResponse.json(
-        { error: '必須項目が入力されていません。' },
+        { error: 'ユーザー名、本名、パスワードは全て必須です。' },
         { status: 400 }
       );
     }
 
+    // 入力値の基本バリデーション
+    if (username.trim().length < 2) {
+      return NextResponse.json(
+        { error: 'ユーザー名は2文字以上で入力してください。' },
+        { status: 400 }
+      );
+    }
 
+    if (fullName.trim().length < 2) {
+      return NextResponse.json(
+        { error: '本名は2文字以上で入力してください。' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'パスワードは6文字以上で入力してください。' },
+        { status: 400 }
+      );
+    }
+
+    // 共有パスワードのチェック
     if (sharedPassword !== process.env.SHARED_PASSWORD) {
       return NextResponse.json({ error: '共有パスワードが正しくありません。' }, { status: 403 });
     }
     
-    const existingUser = await User.findOne({ fullName });
-    if (existingUser) {
+    // ユーザー名の重複チェック
+    const existingUsername = await User.findOne({ username: username.trim() });
+    if (existingUsername) {
       return NextResponse.json(
-        { error: 'このフルネームは既に使用されています。' },
+        { error: 'このユーザー名は既に使用されています。' },
+        { status: 409 }
+      );
+    }
+
+    // 本名の重複チェック
+    const existingFullName = await User.findOne({ fullName: fullName.trim() });
+    if (existingFullName) {
+      return NextResponse.json(
+        { error: 'この本名は既に使用されています。' },
         { status: 409 }
       );
     }
@@ -48,8 +81,8 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const newUser = await User.create({
-      username,
-      fullName,
+      username: username.trim(),
+      fullName: fullName.trim(),
       hashedPassword,
     });
     

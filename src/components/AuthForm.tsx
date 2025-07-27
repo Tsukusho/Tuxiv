@@ -8,8 +8,9 @@ type Props = {
 };
 
 export default function AuthForm({ isRegister }: Props) {
-  const [identifier, setIdentifier] = useState(''); // ユーザー名 or 本名
-  const [fullName, setFullName] = useState('');
+  const [identifier, setIdentifier] = useState(''); // ログイン時のユーザー名 or 本名
+  const [username, setUsername] = useState(''); // 登録時のユーザー名
+  const [fullName, setFullName] = useState(''); // 登録時の本名
   const [password, setPassword] = useState('');
   const [sharedPassword, setSharedPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ export default function AuthForm({ isRegister }: Props) {
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
     
     const body = isRegister
-      ? { username: identifier, fullName, password, sharedPassword }
+      ? { username, fullName, password, sharedPassword }
       : { identifier, password, sharedPassword };  
 
     try {
@@ -41,8 +42,12 @@ export default function AuthForm({ isRegister }: Props) {
       router.push('/');
       router.refresh();
 
-    } catch (err) {
-      setError('ネットワークエラーが発生しました。');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('ネットワークエラーが発生しました。');
+      }
     }
   };
 
@@ -64,20 +69,42 @@ export default function AuthForm({ isRegister }: Props) {
           
           <form onSubmit={handleSubmit} className="space-y-6">
             {isRegister ? (
-              <div>
-                <label htmlFor="identifier" className="block text-sm font-semibold text-gray-700 mb-2">
-                  ユーザー名または本名 <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  id="identifier"
-                  type="text" 
-                  value={identifier} 
-                  onChange={(e) => setIdentifier(e.target.value)} 
-                  required 
-                  className="input-field w-full"
-                  placeholder="ユーザー名を入力してください"
-                />
-              </div>
+              <>
+                <div>
+                  <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                    ユーザー名 <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    id="username"
+                    type="text" 
+                    value={username} 
+                    onChange={(e) => setUsername(e.target.value)} 
+                    required 
+                    className="input-field w-full"
+                    placeholder="ユーザー名を入力してください"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    他のユーザーから見える表示名です
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
+                    本名 <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    id="fullName"
+                    type="text" 
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)} 
+                    required 
+                    className="input-field w-full"
+                    placeholder="本名を入力してください"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    ログイン時の識別にも使用されます
+                  </p>
+                </div>
+              </>
             ) : (
               <div>
                 <label htmlFor="identifier" className="block text-sm font-semibold text-gray-700 mb-2">

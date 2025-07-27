@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     });
     if (!user) {
       return NextResponse.json(
-        { error: 'ユーザー名または本名と、パスワードを入力してください。' },
+        { error: '正しいユーザー名または本名と、パスワードを入力してください。' },
         { status: 401 }
       );
     }
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     const isPasswordMatch = await bcrypt.compare(password, user.hashedPassword);
     if (!isPasswordMatch) {
       return NextResponse.json(
-        { error: 'ユーザー名または本名と、パスワードを入力してください。' },
+        { error: '正しいユーザー名または本名と、パスワードを入力してください。' },
         { status: 401 }
       );
     }

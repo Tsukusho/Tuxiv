@@ -64,7 +64,7 @@ export default function Header({ isLoggedIn }: Props) {
         <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
               <Image 
-                src="/logo.png"
+                src="/logo.png" 
                 alt="Tuxiv Logo" 
                 width={80}
                 height={32}
