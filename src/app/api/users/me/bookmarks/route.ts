@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import { bucket } from '@/lib/gcs';
 import { cookies } from 'next/headers';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
     // 署名付きURLを生成
     const artworksWithSignedUrls = await Promise.all(
-        artworks.map(async (artwork: any) => {
+        artworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({

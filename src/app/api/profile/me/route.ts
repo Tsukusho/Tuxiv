@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
 import { bucket } from '@/lib/gcs';
 import { IUserData } from '@/models/user'; 
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     }
 
     // 2. NSFW設定を基に、作品検索のクエリを作成
-    const artworkQuery: any = { userId };
+    const artworkQuery: Record<string, unknown> = { userId };
     if (!user.showNSFW) {
       artworkQuery.isNSFW = false;
     }
@@ -52,7 +52,7 @@ export async function GET(req: Request) {
                     version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
                 });
                 // NOTE: .lean()を使っているので、直接プロパティを追加できる
-                (artwork as any).thumbnailUrl = signedUrl;
+                (artwork as typeof artwork & { thumbnailUrl: string }).thumbnailUrl = signedUrl;
             }
             return artwork;
         })

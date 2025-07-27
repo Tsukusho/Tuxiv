@@ -5,7 +5,6 @@ import { bucket } from '@/lib/gcs';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import jwt from 'jsonwebtoken';
-import { Types } from 'mongoose';
 import { cookies } from 'next/headers';
 
 /**
@@ -49,7 +48,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'タグは最低1つ必須です。' }, { status: 400 });
     }
 
-    const uploadedImages: any[] = [];
+    const uploadedImages: Array<{path: string; mimeType: string; size: number; order: number}> = [];
     const uploadedFilePaths: string[] = [];
 
     await Promise.all(
@@ -85,10 +84,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json(newArtwork, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Artwork creation failed:', error);
     
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+    if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')) {
       return NextResponse.json({ error: '認証が無効です。' }, { status: 401 });
     }
 
