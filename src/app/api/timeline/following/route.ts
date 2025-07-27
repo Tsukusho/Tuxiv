@@ -2,14 +2,15 @@
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import Artwork from '@/models/artwork';
+import Artwork, { IArtwork } from '@/models/artwork';
 import Follow from '@/models/follow';
 import User from '@/models/user';
 import jwt from 'jsonwebtoken';
 import { bucket } from '@/lib/gcs';
 import { cookies } from 'next/headers';
+import { FilterQuery } from 'mongoose';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -32,17 +33,20 @@ export async function GET(req: Request) {
 
     const following = await Follow.find({ followerId: userId }).select('followingId');
     const followingIds = following.map(f => f.followingId);
-    followingIds.push(userId as any);
+    followingIds.push(userId);
 
     const userArtworksPromises = followingIds.map(async (followingId) => {
         const user = await User.findById(followingId).select('username');
         if (!user) return null;
+        const query: FilterQuery<IArtwork> = {
+          userId: { $in: followingIds },
+          tags: { $nin: mutedTags },
+        };
+        if (!currentUser.showNSFW) {
+          query.isNSFW = false;
+        }
 
-        const artworks = await Artwork.find({
-            userId: followingId,
-            tags: { $nin: mutedTags },
-            isAnonymous: false,
-        })
+        const artworks = await Artwork.find(query)
         .sort({ createdAt: -1 })
         .limit(100); // 各ユーザーごとに最新10件を取得 全件は一旦しない
 

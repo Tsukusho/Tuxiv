@@ -92,7 +92,7 @@ export async function DELETE() {
         const userArtworks = await Artwork.find({ userId }).session(session);
         const artworkIds = userArtworks.map(artwork => artwork._id);
         const deletePromises = userArtworks.flatMap(artwork => 
-            artwork.images.map((image: any) => bucket.file(image.path).delete())
+            artwork.images.map((image: {path: string}) => bucket.file(image.path).delete())
         );
         await Promise.all(deletePromises);
         if (artworkIds.length > 0) {

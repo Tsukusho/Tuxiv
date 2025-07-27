@@ -69,7 +69,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
         }
 
         // 1. GCSから画像ファイルを削除
-        const deletePromises = artwork.images.map((image: any) => bucket.file(image.path).delete());
+        const deletePromises = artwork.images.map((image: {path: string}) => bucket.file(image.path).delete());
         await Promise.all(deletePromises);
 
         // 2. 関連データを削除

@@ -2,11 +2,12 @@
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import Artwork from '@/models/artwork';
+import Artwork, { IArtwork } from '@/models/artwork';
 import User from '@/models/user';
 import { bucket } from '@/lib/gcs';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { FilterQuery } from 'mongoose';
 
 export async function GET(req: Request) {
   try {
@@ -31,7 +32,7 @@ export async function GET(req: Request) {
     }
     const mutedTags = user.mutedTags || [];
 
-    const query: any = {
+    const query: FilterQuery<IArtwork> = {
       tags: { $nin: mutedTags },
     };
 
