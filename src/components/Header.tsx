@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import logoImage from '../assets/logo.png';
 
 function SearchForm() {
   const [query, setQuery] = useState('');
@@ -64,11 +65,12 @@ export default function Header({ isLoggedIn }: Props) {
         <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
               <Image 
-                src="/logo.png" 
+                src={logoImage}
                 alt="Tuxiv Logo" 
                 width={80}
                 height={32}
                 priority
+                placeholder="blur"
               />
             </Link>
             <div className="hidden lg:flex items-center space-x-6">
