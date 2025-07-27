@@ -1,7 +1,7 @@
 // /src/app/page.tsx
 import ArtworkList from "@/components/ArtworkList";
 
-export default function HomePage() {
+export default function GlobalPage() {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/timeline/global`;
   return (
     <main className="container mx-auto px-4 py-8">
