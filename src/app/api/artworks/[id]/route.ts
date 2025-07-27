@@ -10,13 +10,15 @@ import { bucket } from '@/lib/gcs';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 
-type RouteContext = { params: { id: string } }
-
-export async function GET(req: Request, context: RouteContext) {
+export async function GET(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
     try {
       await dbConnect();
-  
-      const artwork = await Artwork.findById(context.params.id).populate({
+      const { id } = await context.params;
+
+      const artwork = await Artwork.findById(id).populate({
         path: 'userId',
         select: 'username',
         model: User,
@@ -42,7 +44,10 @@ export async function GET(req: Request, context: RouteContext) {
 /**
  * 作品を削除するAPI
  */
-export async function DELETE(req: Request, context: RouteContext) {
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -56,7 +61,8 @@ export async function DELETE(req: Request, context: RouteContext) {
 
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
         const userId = decoded.id;
-        const artworkId = context.params.id;
+        const { id } = await context.params;
+        const artworkId = id;
 
         await dbConnect();
 

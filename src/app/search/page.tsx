@@ -2,11 +2,12 @@ import SearchResultsList from "@/components/SearchResultsList";
 import { Suspense } from "react";
 
 type Props = {
-    searchParams: { [key: string]: string | string[] | undefined };
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default function SearchPage({ searchParams }: Props) {
-    const tags = typeof searchParams.tags === 'string' ? searchParams.tags : '';
+export default async function SearchPage({ searchParams }: Props) {
+    const resolvedSearchParams = await searchParams;
+    const tags = typeof resolvedSearchParams.tags === 'string' ? resolvedSearchParams.tags : '';
 
     return (
         <main className="container mx-auto px-4 py-8">

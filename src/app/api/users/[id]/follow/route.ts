@@ -5,9 +5,10 @@ import Follow from '@/models/follow';
 import jwt from 'jsonwebtoken';
 
 
-type RouteContext = { params: { id: string } }
-
-export async function GET(req: Request, context: RouteContext) {
+export async function GET(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -19,7 +20,8 @@ export async function GET(req: Request, context: RouteContext) {
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
     const followerId = decoded.id;
-    const followingId = context.params.id;
+    const { id } = await context.params;
+    const followingId = id;
 
     await dbConnect();
     const existingFollow = await Follow.findOne({ followerId, followingId });
@@ -30,7 +32,10 @@ export async function GET(req: Request, context: RouteContext) {
     return NextResponse.json({ isFollowing: false });
   }
 }
-export async function POST(req: Request, context: RouteContext) {
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -42,7 +47,8 @@ export async function POST(req: Request, context: RouteContext) {
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
     const followerId = decoded.id; 
-    const followingId = context.params.id; 
+    const { id } = await context.params;
+    const followingId = id; 
 
     if (followerId === followingId) {
       return NextResponse.json({ error: '自分自身をフォローすることはできません。' }, { status: 400 });
@@ -64,19 +70,23 @@ export async function POST(req: Request, context: RouteContext) {
     return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });
   }
 }
-export async function DELETE(req: Request, context: RouteContext) {
-    try {
-        const JWT_SECRET = process.env.JWT_SECRET!;
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value;
-    
-        if (!token) {
-          return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
-        }
-    
-                const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-        const followerId = decoded.id;
-        const followingId = context.params.id;
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+      try {
+          const JWT_SECRET = process.env.JWT_SECRET!;
+          const cookieStore = await cookies();
+          const token = cookieStore.get('token')?.value;
+      
+          if (!token) {
+            return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+          }
+      
+                  const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+          const followerId = decoded.id;
+          const { id } = await context.params;
+          const followingId = id;
 
         await dbConnect();
     

@@ -4,17 +4,13 @@ import Bookmark from '@/models/bookmark';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
-// ★★★ 引数の型定義を修正 ★★★
-type RouteContext = {
-  params: {
-    id: string;
-  }
-}
-
 /**
  * ユーザーが特定の作品をブックマーク済みか確認するAPI
  */
-export async function GET(req: Request, context: RouteContext) {
+export async function GET(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const cookieStore = await cookies();
@@ -26,7 +22,8 @@ export async function GET(req: Request, context: RouteContext) {
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
     const userId = decoded.id;
-    const artworkId = context.params.id; // ★ params.id を context.params.id に変更
+    const { id } = await context.params;
+    const artworkId = id;
 
     await dbConnect();
     const existingBookmark = await Bookmark.findOne({ userId, artworkId });
@@ -41,7 +38,10 @@ export async function GET(req: Request, context: RouteContext) {
 /**
  * 作品をブックマークするAPI
  */
-export async function POST(req: Request, context: RouteContext) {
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
     try {
         const JWT_SECRET = process.env.JWT_SECRET!;
         const cookieStore = await cookies();
@@ -53,7 +53,8 @@ export async function POST(req: Request, context: RouteContext) {
     
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
         const userId = decoded.id;
-        const artworkId = context.params.id; // ★ params.id を context.params.id に変更
+        const { id } = await context.params;
+        const artworkId = id;
     
         await dbConnect();
     
@@ -75,7 +76,10 @@ export async function POST(req: Request, context: RouteContext) {
 /**
  * 作品のブックマークを解除するAPI
  */
-export async function DELETE(req: Request, context: RouteContext) {
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
     try {
         const JWT_SECRET = process.env.JWT_SECRET!;
         const cookieStore = await cookies();
@@ -87,7 +91,8 @@ export async function DELETE(req: Request, context: RouteContext) {
     
         const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
         const userId = decoded.id;
-        const artworkId = context.params.id; // ★ params.id を context.params.id に変更
+        const { id } = await context.params;
+        const artworkId = id;
     
         await dbConnect();
     
