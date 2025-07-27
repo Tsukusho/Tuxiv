@@ -10,6 +10,14 @@ import Comments from "@/components/Comments";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import Link from "next/link";
+import Image from 'next/image';
+
+interface IImage {
+  path: string;
+  mimeType: string;
+  size: number;
+  order: number;
+}
 
 async function getArtwork(id: string): Promise<IArtworkData | null> {
   try {
@@ -31,10 +39,10 @@ async function getArtwork(id: string): Promise<IArtworkData | null> {
     const artworkObject = JSON.parse(JSON.stringify(artwork));
     
     const signedUrls = await Promise.all(
-      artwork.images.map((image: any) => bucket.file(image.path).getSignedUrl(options))
+      artwork.images.map((image: IImage) => bucket.file(image.path).getSignedUrl(options))
     );
 
-    artworkObject.images = artworkObject.images.map((image: any, index: number) => ({
+    artworkObject.images = artworkObject.images.map((image: IImage, index: number) => ({
         ...image,
         url: signedUrls[index][0],
     }));
@@ -57,6 +65,7 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
       loggedInUserId = decoded.id;
     }
+
   } catch (error) {
     console.log("Token verification failed, user is not logged in.");
   }
@@ -76,10 +85,13 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
             <div className="lg:col-span-2">
               <div className="card overflow-hidden">
                 {artwork.images.map((image, index) => (
-                  <img 
+                  <Image 
                     key={index} 
-                    src={image.url} 
+                    src={image.url!} 
                     alt={`${artwork.title} - 画像${index + 1}`}
+                    width={800}
+                    height={800}
+
                     className="w-full h-auto object-contain bg-gray-100"
                   />
                 ))}

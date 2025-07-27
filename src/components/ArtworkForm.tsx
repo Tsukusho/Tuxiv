@@ -50,8 +50,12 @@ export default function ArtworkForm() {
 
       router.push(`/artworks/${data._id}`);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('予期せぬエラーが発生しました。');
+      }
     } finally {
       setIsSubmitting(false);
     }

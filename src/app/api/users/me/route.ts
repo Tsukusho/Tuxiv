@@ -29,7 +29,7 @@ async function getUserIdFromToken() {
 /**
  * ログイン中のユーザー情報を取得するAPI
  */
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const userId = await getUserIdFromToken();
         await dbConnect();
@@ -82,7 +82,7 @@ export async function PUT(req: Request) {
 /**
  * ログイン中のユーザーアカウントを削除するAPI
  */
-export async function DELETE(req: Request) {
+export async function DELETE() {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {

@@ -1,4 +1,4 @@
-import { IArtworkData } from '@/models/artwork';
+import { IArtworkData, IArtwork } from '@/models/artwork';
 import { bucket } from '@/lib/gcs';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
@@ -6,7 +6,9 @@ import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
-import { IUserData } from '@/models/user'; 
+import { IUserData } from '@/models/user';
+import { FilterQuery } from 'mongoose';
+
 
 
 const limitPostsNum = 1000; //todo:ページネーション実装したい
@@ -20,7 +22,9 @@ export default async function ArtworkList() {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     let mutedTags: string[] = [];
-    let query: any = {};
+    const query: FilterQuery<IArtwork> = {
+      tags: { $nin: mutedTags }
+    };
 
     if (token) {
       try {
@@ -30,17 +34,19 @@ export default async function ArtworkList() {
           mutedTags = user.mutedTags || [];
           if (!user.showNSFW) {
             query.isNSFW = false;
-          } else {
-            query.isNSFW = false;
           }
+        } else {
+          query.isNSFW = false;
         }
       } catch (e) {
         console.log("Invalid token, proceeding as guest.");
+        query.isNSFW = false;
       }
+    } else {
+      query.isNSFW = false;
     }
-    if (mutedTags.length > 0) {
-      query.tags = { $nin: mutedTags };
-    }
+    
+    query.tags = { $nin: mutedTags }
 
     const artworks = await Artwork.find(query)
       .sort({ createdAt: -1 })
