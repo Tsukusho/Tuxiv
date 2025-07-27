@@ -9,6 +9,7 @@ import Bookmark from '@/models/bookmark';
 import { bucket } from '@/lib/gcs';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export async function GET(
   req: Request,
@@ -52,8 +53,8 @@ export async function DELETE(
     session.startTransaction();
     try {
         const JWT_SECRET = process.env.JWT_SECRET!;
-        const authHeader = req.headers.get('authorization');
-        const token = authHeader?.split(' ')[1];
+        const cookieStore = await cookies();
+        const token = cookieStore.get('token')?.value;
 
         if (!token) {
             return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });

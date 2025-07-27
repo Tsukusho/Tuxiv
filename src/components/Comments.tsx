@@ -102,7 +102,7 @@ export default function Comments({ artworkId }: { artworkId: string }) {
                     })}
                   </p>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">{comment.text}</p>
+                <p className="text-sm text-gray-700 leading-relaxed break-words">{comment.text}</p>
               </div>
             </div>
           ))

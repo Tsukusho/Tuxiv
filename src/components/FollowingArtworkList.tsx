@@ -50,7 +50,7 @@ export default function FollowingArtworkList() {
       {userArtworks.map((group) => (
         <div key={group.user._id}>
           <Link href={`/users/${group.user.username}`} className="hover:underline">
-            <h2 className="text-xl font-bold mb-4">{group.user.username}</h2>
+            <h2 className="text-xl font-bold mb-4 break-words">{group.user.username}</h2>
           </Link>
           {/* 横スクロール用のコンテナ */}
           <div className="flex space-x-4 overflow-x-auto pb-4">

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       tags: { $nin: mutedTags },
     };
 
-    if (!user.showNSFW) {
+    if (user.showNSFW !== true) {
       query.isNSFW = false;
     }
 

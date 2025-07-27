@@ -72,7 +72,7 @@ export default function MyProfile() {
             </span>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{user.username}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 break-words">{user.username}</h1>
             <p className="text-sm text-gray-600 mt-1">フォロワー: {user.followerCount}人</p>
           </div>
         </div>

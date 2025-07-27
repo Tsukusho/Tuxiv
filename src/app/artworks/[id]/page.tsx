@@ -92,8 +92,8 @@ export default async function ArtworkDetailPage({ params }: { params: Promise<{ 
                     alt={`${artwork.title} - 画像${index + 1}`}
                     width={800}
                     height={800}
-
                     className="w-full h-auto object-contain bg-gray-100"
+                    unoptimized
                   />
                 ))}
               </div>
@@ -113,7 +113,7 @@ export default async function ArtworkDetailPage({ params }: { params: Promise<{ 
                         <Link 
                           href={`/search?tags=${encodeURIComponent(tag)}`} 
                           key={index} 
-                          className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-blue-100 hover:text-blue-800 transition-colors"
+                          className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 rounded-full hover:bg-blue-100 hover:text-blue-800 transition-colors break-words"
                         >
                           #{tag}
                         </Link>
@@ -126,7 +126,7 @@ export default async function ArtworkDetailPage({ params }: { params: Promise<{ 
                 {artwork.description && (
                   <div className="mb-6">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">作品について</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap break-words">
                       {artwork.description}
                     </p>
                   </div>

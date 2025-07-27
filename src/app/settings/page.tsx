@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [mutedTags, setMutedTags] = useState('');
@@ -17,6 +18,7 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        setUsername(data.username);
         setFullName(data.fullName);
         setMutedTags(data.mutedTags.join(', '));
         setShowNSFW(data.showNSFW);
@@ -25,12 +27,13 @@ export default function SettingsPage() {
     fetchUserData();
   }, []);
 
-  const handleUpdate = async (e: React.FormEvent, field: 'fullName' | 'password' | 'mutedTags' | 'showNSFW') => {
+  const handleUpdate = async (e: React.FormEvent, field: 'username' | 'fullName' | 'password' | 'mutedTags' | 'showNSFW') => {
     e.preventDefault();
     setMessage('');
     
     let body;
     switch(field) {
+        case 'username': body = { username }; break;
         case 'fullName': body = { fullName }; break;
         case 'password': body = { password }; break;
         case 'mutedTags': body = { mutedTags: mutedTags.split(',').map(t => t.trim()) }; break;
@@ -74,6 +77,21 @@ export default function SettingsPage() {
       {message && <p className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50">{message}</p>}
       
       <div className="space-y-8">
+        <form onSubmit={(e) => handleUpdate(e, 'username')}>
+          <h2 className="text-xl font-semibold mb-2">ユーザー名変更</h2>
+          <p className="text-sm text-gray-500 mb-2">他のユーザーから見える表示名です。半角英数字、アンダースコア、ハイフンが使用できます。</p>
+          <input 
+            type="text" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            required 
+            pattern="^[a-zA-Z0-9_-]+$"
+            title="半角英数字、アンダースコア、ハイフンのみ使用可能です"
+            className="w-full px-3 py-2 border rounded-md mb-2" 
+          />
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">更新</button>
+        </form>
+
         {/* フルネーム変更機能は作成したが、基本的に1人1アカウントの思想なので、フルネーム変更機能はフロント側には出さない。
         <form onSubmit={(e) => handleUpdate(e, 'fullName')}>
           <h2 className="text-xl font-semibold mb-2">フルネーム変更</h2>
@@ -101,10 +119,21 @@ export default function SettingsPage() {
               id="show-nsfw"
               type="checkbox" 
               checked={showNSFW} 
-              onChange={(e) => {
-                setShowNSFW(e.target.checked);
+              onChange={async (e) => {
+                const newValue = e.target.checked;
+                setShowNSFW(newValue);
                 // NOTE: チェックボックスは即時反映させるため、onChangeイベントで直接更新APIを呼ぶ
-                handleUpdate(e, 'showNSFW');
+                const res = await fetch('/api/users/me', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ showNSFW: newValue }),
+                });
+                if (res.ok) {
+                  setMessage('NSFW設定を更新しました。');
+                } else {
+                  const data = await res.json();
+                  setMessage(`エラー: ${data.error}`);
+                }
               }} 
               className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />

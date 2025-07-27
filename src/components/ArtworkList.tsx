@@ -32,7 +32,7 @@ export default async function ArtworkList() {
         const user = await User.findById(decoded.id).lean<IUserData>();
         if (user) {
           mutedTags = user.mutedTags || [];
-          if (!user.showNSFW) {
+          if (user.showNSFW !== true) {
             query.isNSFW = false;
           }
         } else {
@@ -106,7 +106,7 @@ export default async function ArtworkList() {
               />
             </div>
             <div className="p-4">
-              <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+              <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors break-words">
                 {artwork.title}
               </h3>
               <div className="flex items-center justify-between">
@@ -119,7 +119,7 @@ export default async function ArtworkList() {
                     </div>
                     <Link 
                       href={`/users/${artwork.userId.username}`} 
-                      className="text-xs text-gray-500 hover:text-blue-600 hover:underline transition-colors"
+                      className="text-xs text-gray-500 hover:text-blue-600 hover:underline transition-colors break-words"
                     >
                       {artwork.userId.username}
                     </Link>

@@ -33,16 +33,15 @@ export async function GET() {
 
     const following = await Follow.find({ followerId: userId }).select('followingId');
     const followingIds = following.map(f => f.followingId);
-    followingIds.push(userId);
 
     const userArtworksPromises = followingIds.map(async (followingId) => {
         const user = await User.findById(followingId).select('username');
         if (!user) return null;
         const query: FilterQuery<IArtwork> = {
-          userId: { $in: followingIds },
+          userId: followingId,
           tags: { $nin: mutedTags },
         };
-        if (!currentUser.showNSFW) {
+        if (currentUser.showNSFW !== true) {
           query.isNSFW = false;
         }
 

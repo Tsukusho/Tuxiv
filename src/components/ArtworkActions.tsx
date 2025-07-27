@@ -36,7 +36,7 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
     <div className="space-y-6">
       {/* タイトルとアクションボタン */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-4">{artwork.title}</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-4 break-words">{artwork.title}</h1>
         <div className="flex items-center space-x-3">
           <LikeButton artworkId={artwork._id} initialLikeCount={artwork.likeCount} />
           <BookmarkButton artworkId={artwork._id} />
@@ -55,11 +55,10 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
             <div>
               <Link 
                 href={`/users/${artwork.userId.username}`} 
-                className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                className="font-semibold text-gray-900 hover:text-blue-600 transition-colors break-words"
               >
                 {artwork.userId.username}
               </Link>
-              <p className="text-xs text-gray-500">クリエイター</p>
             </div>
           </div>
           {/* isOwnerがfalseの時だけフォローボタンを表示 */}

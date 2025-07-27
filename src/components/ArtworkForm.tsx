@@ -38,7 +38,6 @@ export default function ArtworkForm() {
     try {
       const res = await fetch('/api/artworks', {
         method: 'POST',
-        headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
       });
 
@@ -114,7 +113,6 @@ export default function ArtworkForm() {
                   onChange={(e) => setDescription(e.target.value)} 
                   rows={5}
                   className="input-field w-full resize-none"
-                  placeholder="作品の説明、制作過程、使用した技法など..."
                 />
               </div>
 
@@ -127,7 +125,7 @@ export default function ArtworkForm() {
                   type="text" 
                   value={tags} 
                   onChange={(e) => setTags(e.target.value)}
-                  placeholder="例：やが君,やがて君になる,百合"
+                  placeholder="例：やが君,やがて君になる"
                   className="input-field w-full"
                   required
                 />
