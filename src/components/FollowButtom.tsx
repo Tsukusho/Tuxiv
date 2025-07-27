@@ -15,6 +15,7 @@ export default function FollowButton({ targetUserId }: Props) {
       try {
         const res = await fetch(`/api/users/${targetUserId}/follow`, {
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
         });
         if (res.ok) {
           const data = await res.json();
@@ -44,6 +45,7 @@ export default function FollowButton({ targetUserId }: Props) {
       const res = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!res.ok) {

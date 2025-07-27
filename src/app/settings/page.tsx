@@ -15,6 +15,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       const res = await fetch('/api/users/me', {
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
@@ -44,6 +45,7 @@ export default function SettingsPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      credentials: 'include',
     });
 
     if (res.ok) {
@@ -62,7 +64,7 @@ export default function SettingsPage() {
       });
 
       if (res.ok) {
-        await fetch('/api/auth/logout', { method: 'POST' });
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
         router.push('/');
         router.refresh();
       } else {
@@ -123,11 +125,12 @@ export default function SettingsPage() {
                 const newValue = e.target.checked;
                 setShowNSFW(newValue);
                 // NOTE: チェックボックスは即時反映させるため、onChangeイベントで直接更新APIを呼ぶ
-                const res = await fetch('/api/users/me', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ showNSFW: newValue }),
-                });
+                               const res = await fetch('/api/users/me', {
+                 method: 'PUT',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ showNSFW: newValue }),
+                 credentials: 'include',
+               });
                 if (res.ok) {
                   setMessage('NSFW設定を更新しました。');
                 } else {

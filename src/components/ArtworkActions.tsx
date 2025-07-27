@@ -21,6 +21,7 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
       // Cookieは自動で送信される
       const res = await fetch(`/api/artworks/${artwork._id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       if (res.ok) {
         alert('作品を削除しました。');
@@ -44,25 +45,42 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
       </div>
 
       {/* 投稿者情報 */}
-      {!artwork.isAnonymous && artwork.userId && (
+      {!artwork.isAnonymous && (
         <div className="flex items-center justify-between py-4 border-y border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <span className="text-sm font-bold text-blue-600">
-                {artwork.userId.username.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <Link 
-                href={`/users/${artwork.userId.username}`} 
-                className="font-semibold text-gray-900 hover:text-blue-600 transition-colors break-words"
-              >
-                {artwork.userId.username}
-              </Link>
-            </div>
+            {artwork.userId ? (
+              <>
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-sm font-bold text-blue-600">
+                    {artwork.userId.username.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <Link 
+                    href={`/users/${artwork.userId.username}`} 
+                    className="font-semibold text-gray-900 hover:text-blue-600 transition-colors break-words"
+                  >
+                    {artwork.userId.username}
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <span className="text-sm font-bold text-gray-400">
+                    削除
+                  </span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-400 italic break-words">
+                    削除済みユーザー
+                  </span>
+                </div>
+              </>
+            )}
           </div>
-          {/* isOwnerがfalseの時だけフォローボタンを表示 */}
-          {!isOwner && <FollowButton targetUserId={artwork.userId._id} />}
+          {/* 通常のユーザーでisOwnerがfalseの時だけフォローボタンを表示 */}
+          {artwork.userId && !isOwner && <FollowButton targetUserId={artwork.userId._id} />}
         </div>
       )}
 

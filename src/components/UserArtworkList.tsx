@@ -29,8 +29,11 @@ export default async function UserArtworkList({ username }: Props) {
         .sort({ createdAt: -1 })
         .limit(1000); // 表示件数を制限
 
+      // 削除済みユーザーの投稿を除外（通常は発生しないが安全のため）
+      const validArtworks = artworks.filter(artwork => artwork.userId);
+
       // 3. 署名付きURLを生成
-      const signedUrlPromises = artworks.map(artwork => {
+      const signedUrlPromises = validArtworks.map(artwork => {
         if (artwork.images && artwork.images.length > 0) {
           return bucket.file(artwork.images[0].path).getSignedUrl({
             version: 'v4',
@@ -43,7 +46,7 @@ export default async function UserArtworkList({ username }: Props) {
 
       const signedUrls = await Promise.all(signedUrlPromises);
       
-      artworksWithSignedUrls = artworks.map((artwork, index) => ({
+      artworksWithSignedUrls = validArtworks.map((artwork, index) => ({
         ...JSON.parse(JSON.stringify(artwork)),
         thumbnailUrl: signedUrls[index],
       }));

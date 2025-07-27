@@ -30,7 +30,10 @@ export default async function SearchResultsList({ tags }: Props) {
           model: User,
         });
 
-      const signedUrlPromises = artworks.map(artwork => {
+      // 削除済みユーザーの投稿を除外
+      const validArtworks = artworks.filter(artwork => artwork.userId !== null);
+
+      const signedUrlPromises = validArtworks.map(artwork => {
         if (artwork.images && artwork.images.length > 0) {
           return bucket.file(artwork.images[0].path).getSignedUrl({
             version: 'v4',
@@ -43,7 +46,7 @@ export default async function SearchResultsList({ tags }: Props) {
 
       const signedUrls = await Promise.all(signedUrlPromises);
       
-      artworksWithSignedUrls = artworks.map((artwork, index) => ({
+      artworksWithSignedUrls = validArtworks.map((artwork, index) => ({
         ...JSON.parse(JSON.stringify(artwork)),
         thumbnailUrl: signedUrls[index],
       }));

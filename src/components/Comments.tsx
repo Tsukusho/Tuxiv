@@ -19,7 +19,9 @@ export default function Comments({ artworkId }: { artworkId: string }) {
 
   useEffect(() => {
     const fetchComments = async () => {
-      const res = await fetch(`/api/artworks/${artworkId}/comments`);
+      const res = await fetch(`/api/artworks/${artworkId}/comments`, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setComments(data);
@@ -38,6 +40,7 @@ export default function Comments({ artworkId }: { artworkId: string }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: newComment }),
+      credentials: 'include',
     });
 
     if (res.ok) {
@@ -82,30 +85,45 @@ export default function Comments({ artworkId }: { artworkId: string }) {
             <p className="text-sm text-gray-500">コメントを読み込み中...</p>
           </div>
         ) : comments.length > 0 ? (
-          comments.map(comment => (
-            <div key={comment._id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-blue-600">
-                  {comment.userId.username.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <p className="font-semibold text-sm text-gray-900">{comment.userId.username}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(comment.createdAt).toLocaleString('ja-JP', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
+          comments.map(comment => {
+            // 削除済みユーザーの場合の処理
+            const isDeletedUser = !comment.userId;
+            const username = isDeletedUser ? '削除済みユーザー' : comment.userId.username;
+            const userInitial = username.charAt(0).toUpperCase();
+            
+            return (
+              <div key={comment._id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isDeletedUser ? 'bg-gray-100' : 'bg-blue-100'
+                }`}>
+                  <span className={`text-xs font-bold ${
+                    isDeletedUser ? 'text-gray-500' : 'text-blue-600'
+                  }`}>
+                    {userInitial}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed break-words">{comment.text}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <p className={`font-semibold text-sm ${
+                      isDeletedUser ? 'text-gray-500 italic' : 'text-gray-900'
+                    }`}>
+                      {username}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(comment.createdAt).toLocaleString('ja-JP', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed break-words">{comment.text}</p>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="text-center py-8">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

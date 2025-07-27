@@ -49,11 +49,14 @@ export async function GET() {
         .sort({ createdAt: -1 })
         .limit(100); // 各ユーザーごとに最新10件を取得 全件は一旦しない
 
-        if (artworks.length === 0) return null;
+        // 削除済みユーザーの投稿を除外（通常following内では発生しないが安全のため）
+        const validArtworks = artworks.filter(artwork => artwork.userId);
+
+        if (validArtworks.length === 0) return null;
 
         // 署名付きURLを生成
         const artworksWithSignedUrls = await Promise.all(
-            artworks.map(async (artwork) => {
+            validArtworks.map(async (artwork) => {
                 const artworkObject = JSON.parse(JSON.stringify(artwork));
                 if (artwork.images && artwork.images.length > 0) {
                     const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({

@@ -44,9 +44,12 @@ export async function GET() {
       Artwork.find(artworkQuery).sort({ createdAt: -1 }).lean() 
     ]);
 
+    // 削除済みユーザーの投稿を除外（通常は発生しないが安全のため）
+    const validArtworks = artworks.filter(artwork => artwork.userId);
+
     // 投稿一覧に署名付きURLを追加
     const artworksWithSignedUrls = await Promise.all(
-        artworks.map(async (artwork) => {
+        validArtworks.map(async (artwork) => {
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({
                     version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,

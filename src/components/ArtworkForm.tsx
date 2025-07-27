@@ -36,10 +36,11 @@ export default function ArtworkForm() {
     });
 
     try {
-      const res = await fetch('/api/artworks', {
-        method: 'POST',
-        body: formData,
-      });
+          const res = await fetch('/api/artworks', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
 
       const data = await res.json();
 

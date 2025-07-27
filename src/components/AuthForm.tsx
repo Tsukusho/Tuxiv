@@ -27,11 +27,12 @@ export default function AuthForm({ isRegister }: Props) {
       : { identifier, password, sharedPassword };  
 
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+          const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
 
       if (!res.ok) {
         const data = await res.json();
