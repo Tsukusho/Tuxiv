@@ -10,6 +10,7 @@ import { IUserData } from '@/models/user';
 import { FilterQuery } from 'mongoose';
 
 
+
 const limitPostsNum = 1000; //todo:ページネーション実装したい
 
 // NOTE: サーバーコンポーネントとして、直接データを取得する
@@ -21,7 +22,6 @@ export default async function ArtworkList() {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     let mutedTags: string[] = [];
-    
     const query: FilterQuery<IArtwork> = {
       tags: { $nin: mutedTags }
     };
@@ -46,7 +46,7 @@ export default async function ArtworkList() {
       query.isNSFW = false;
     }
     
-    query.tags = { $nin: mutedTags };
+    query.tags = { $nin: mutedTags }
 
     const artworks = await Artwork.find(query)
       .sort({ createdAt: -1 })

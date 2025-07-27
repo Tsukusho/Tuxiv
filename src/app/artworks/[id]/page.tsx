@@ -65,7 +65,8 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
       loggedInUserId = decoded.id;
     }
-  } catch (_e) {
+
+  } catch (error) {
     console.log("Token verification failed, user is not logged in.");
   }
   
@@ -90,6 +91,7 @@ export default async function ArtworkDetailPage({ params }: { params: { id: stri
                     alt={`${artwork.title} - 画像${index + 1}`}
                     width={800}
                     height={800}
+
                     className="w-full h-auto object-contain bg-gray-100"
                   />
                 ))}
