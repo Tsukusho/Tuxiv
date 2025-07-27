@@ -38,7 +38,10 @@ export async function GET() {
         if (!user) {
             return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
         }
-        return NextResponse.json(user);
+        return NextResponse.json({
+            ...user.toObject(),
+            showNSFW: user.showNSFW || false
+        });
 
     } catch (error) {
         console.error(error);
@@ -55,12 +58,36 @@ export async function PUT(req: Request) {
         const body = await req.json();
         await dbConnect();
 
-        const updateData: { fullName?: string; hashedPassword?: string; mutedTags?: string[] } = {};
+        const updateData: { username?: string; fullName?: string; hashedPassword?: string; mutedTags?: string[]; showNSFW?: boolean } = {};
+        
+        // ユーザー名の更新処理
+        if (body.username) {
+            const username = body.username.trim();
+            
+            // バリデーション
+            if (username.length < 2) {
+                return NextResponse.json({ error: 'ユーザー名は2文字以上で入力してください。' }, { status: 400 });
+            }
+            
+            if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+                return NextResponse.json({ error: 'ユーザー名は半角英数字、アンダースコア、ハイフンのみ使用できます。' }, { status: 400 });
+            }
+            
+            // 重複チェック
+            const existingUser = await User.findOne({ username, _id: { $ne: userId } });
+            if (existingUser) {
+                return NextResponse.json({ error: 'このユーザー名は既に使用されています。' }, { status: 409 });
+            }
+            
+            updateData.username = username;
+        }
+        
         if (body.fullName) updateData.fullName = body.fullName;
         if (body.password) {
             updateData.hashedPassword = await bcrypt.hash(body.password, 10);
         }
         if (body.mutedTags) updateData.mutedTags = body.mutedTags;
+        if (body.showNSFW !== undefined) updateData.showNSFW = body.showNSFW;
 
         const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
         if (!updatedUser) {
@@ -71,7 +98,8 @@ export async function PUT(req: Request) {
             id: updatedUser._id,
             username: updatedUser.username,
             fullName: updatedUser.fullName,
-            mutedTags: updatedUser.mutedTags
+            mutedTags: updatedUser.mutedTags,
+            showNSFW: updatedUser.showNSFW
         });
     } catch (error) {
         console.error(error);

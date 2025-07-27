@@ -34,7 +34,7 @@ export async function GET() {
 
     // 2. NSFW設定を基に、作品検索のクエリを作成
     const artworkQuery: Record<string, unknown> = { userId };
-    if (!user.showNSFW) {
+    if (user.showNSFW !== true) {
       artworkQuery.isNSFW = false;
     }
     
