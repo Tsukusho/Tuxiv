@@ -2,11 +2,11 @@ import UserArtworkList from '@/components/UserArtworkList';
 import { Suspense } from 'react';
 
 type Props = {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }
 
-export default function UserPage({ params }: Props) {
-  const { username } = params;
+export default async function UserPage({ params }: Props) {
+  const { username } = await params;
 
   const decodedUsername = decodeURIComponent(username);
 

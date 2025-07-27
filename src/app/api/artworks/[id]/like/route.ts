@@ -71,21 +71,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 /**
  * 作品のいいねを解除するAPI
  */
-type RouteContext = { params: { id: string } }
-
-export async function DELETE(req: Request, context: RouteContext) {
-    try {
-        const JWT_SECRET = process.env.JWT_SECRET!;
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value;
-    
-        if (!token) {
-          return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
-        }
-    
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-        const userId = decoded.id;
-        const artworkId = context.params.id;
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+      try {
+          const JWT_SECRET = process.env.JWT_SECRET!;
+          const cookieStore = await cookies();
+          const token = cookieStore.get('token')?.value;
+      
+          if (!token) {
+            return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+          }
+      
+          const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+          const userId = decoded.id;
+          const { id } = await context.params;
+          const artworkId = id;
     
         await dbConnect();
     
