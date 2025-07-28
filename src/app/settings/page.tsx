@@ -10,6 +10,8 @@ export default function SettingsPage() {
   const [mutedTags, setMutedTags] = useState('');
   const [message, setMessage] = useState('');
   const [showNSFW, setShowNSFW] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,6 +25,7 @@ export default function SettingsPage() {
         setFullName(data.fullName);
         setMutedTags(data.mutedTags.join(', '));
         setShowNSFW(data.showNSFW);
+        setProfileImageUrl(data.profileImageUrl);
       }
     };
     fetchUserData();
@@ -56,6 +59,69 @@ export default function SettingsPage() {
       setMessage(`エラー: ${data.error}`);
     }
   };
+
+  const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    setMessage('');
+
+    const formData = new FormData();
+    formData.append('profileImage', file);
+
+    try {
+      const res = await fetch('/api/users/me/profile-image', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage('プロフィール画像をアップロードしました。');
+        // 新しい画像URLを取得するためにユーザーデータを再取得
+        const userRes = await fetch('/api/users/me', { credentials: 'include' });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setProfileImageUrl(userData.profileImageUrl);
+        }
+      } else {
+        setMessage(`エラー: ${data.error}`);
+      }
+    } catch (error) {
+      setMessage('アップロード中にエラーが発生しました。');
+    } finally {
+      setIsUploadingImage(false);
+      // ファイル入力をリセット
+      e.target.value = '';
+    }
+  };
+
+  const handleProfileImageDelete = async () => {
+    if (!window.confirm('プロフィール画像を削除しますか？')) return;
+
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/users/me/profile-image', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage('プロフィール画像を削除しました。');
+        setProfileImageUrl(null);
+      } else {
+        setMessage(`エラー: ${data.error}`);
+      }
+    } catch (error) {
+      setMessage('削除中にエラーが発生しました。');
+    }
+  };
   
   const handleDeleteAccount = async () => {
     if (window.confirm('本当にアカウントを削除しますか？この操作は元に戻せません。')) {
@@ -79,6 +145,62 @@ export default function SettingsPage() {
       {message && <p className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50">{message}</p>}
       
       <div className="space-y-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">プロフィール画像</h2>
+          <div className="flex items-center space-x-6">
+            <div className="flex-shrink-0">
+              {profileImageUrl ? (
+                <img 
+                  src={profileImageUrl} 
+                  alt="プロフィール画像" 
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-200">
+                  <span className="text-2xl font-bold text-gray-500">
+                    {username.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="space-y-2">
+                <div>
+                  <label htmlFor="profile-image-upload" className="cursor-pointer">
+                    <span className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-block ${
+                      isUploadingImage ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}>
+                      {isUploadingImage ? 'アップロード中...' : '画像を選択'}
+                    </span>
+                    <input
+                      id="profile-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageUpload}
+                      disabled={isUploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {profileImageUrl && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleProfileImageDelete}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                    >
+                      画像を削除
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  JPG、PNG、GIF形式（5MB以下）
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <form onSubmit={(e) => handleUpdate(e, 'username')}>
           <h2 className="text-xl font-semibold mb-2">ユーザー名変更</h2>
           <p className="text-sm text-gray-500 mb-2">他のユーザーから見える表示名です。半角英数字、アンダースコア、ハイフンが使用できます。</p>

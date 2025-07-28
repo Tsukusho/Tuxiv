@@ -25,15 +25,18 @@ export async function GET() {
 
     await dbConnect();
 
-    // 1. まずユーザー情報を取得してNSFW設定を確認
-    const user = await User.findById(userId).select('username showNSFW').lean<IUserData>();
+    // 1. まずユーザー情報を取得してNSFW設定とミュートタグを確認
+    const user = await User.findById(userId).select('username showNSFW mutedTags').lean<IUserData>();
 
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
     }
 
-    // 2. NSFW設定を基に、作品検索のクエリを作成
-    const artworkQuery: Record<string, unknown> = { userId };
+    // 2. NSFW設定とミュートタグを基に、作品検索のクエリを作成
+    const artworkQuery: Record<string, unknown> = { 
+      userId,
+      tags: { $nin: user.mutedTags || [] }
+    };
     if (user.showNSFW !== true) {
       artworkQuery.isNSFW = false;
     }

@@ -50,11 +50,19 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
           <div className="flex items-center space-x-3">
             {artwork.userId ? (
               <>
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-sm font-bold text-blue-600">
-                    {artwork.userId.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                {(artwork.userId as unknown as { profileImageUrl?: string }).profileImageUrl ? (
+                  <img
+                    src={(artwork.userId as unknown as { profileImageUrl: string }).profileImageUrl}
+                    alt={`${artwork.userId.username}のプロフィール画像`}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-sm font-bold text-blue-600">
+                      {artwork.userId.username.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <Link 
                     href={`/users/${artwork.userId.username}`} 

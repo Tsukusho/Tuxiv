@@ -5,8 +5,8 @@ import Comment from '@/models/comment';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
 import { cookies } from 'next/headers';
+import { bucket } from '@/lib/gcs';
 /**
  * 作品のコメント一覧を取得するAPI
  */
@@ -23,11 +23,34 @@ export async function GET(
       .sort({ createdAt: -1 }) // 新しい順
       .populate({
         path: 'userId',
-        select: 'username',
+        select: 'username profileImage',
         model: User,
       });
 
-    return NextResponse.json(comments);
+    // プロフィール画像のSigned URLを生成
+    const commentsWithImageUrls = await Promise.all(
+      comments.map(async (comment) => {
+        const commentObj = comment.toObject();
+        
+        if (commentObj.userId && commentObj.userId.profileImage?.path) {
+          try {
+            const options = {
+              version: 'v4' as const,
+              action: 'read' as const,
+              expires: Date.now() + 15 * 60 * 1000, // 15分
+            };
+            const [signedUrl] = await bucket.file(commentObj.userId.profileImage.path).getSignedUrl(options);
+            commentObj.userId.profileImageUrl = signedUrl;
+          } catch (error) {
+            console.warn('プロフィール画像のSigned URL生成に失敗:', error);
+          }
+        }
+        
+        return commentObj;
+      })
+    );
+
+    return NextResponse.json(commentsWithImageUrls);
   } catch (error) {
     console.error('GET Comments Error:', error);
     return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });

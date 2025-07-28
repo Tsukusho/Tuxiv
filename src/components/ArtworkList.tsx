@@ -53,7 +53,7 @@ export default async function ArtworkList() {
       .limit(limitPostsNum) 
       .populate({
         path: 'userId',
-        select: 'username',
+        select: 'username profileImage',
         model: User,
       });
 
@@ -73,10 +73,33 @@ export default async function ArtworkList() {
 
     const signedUrls = await Promise.all(signedUrlPromises);
     
-    artworksWithSignedUrls = validArtworks.map((artwork, index) => ({
-      ...JSON.parse(JSON.stringify(artwork)),
-      thumbnailUrl: signedUrls[index],
-    }));
+    // プロフィール画像のSigned URL生成
+    const profileImagePromises = validArtworks.map(artwork => {
+      if (artwork.userId && artwork.userId.profileImage?.path) {
+        return bucket.file(artwork.userId.profileImage.path).getSignedUrl({
+          version: 'v4',
+          action: 'read',
+          expires: Date.now() + 15 * 60 * 1000,
+        }).then(urls => urls[0]).catch(error => {
+          console.warn('プロフィール画像のSigned URL生成に失敗:', error);
+          return null;
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const profileImageUrls = await Promise.all(profileImagePromises);
+    
+    artworksWithSignedUrls = validArtworks.map((artwork, index) => {
+      const artworkObj = JSON.parse(JSON.stringify(artwork));
+      if (profileImageUrls[index] && artworkObj.userId) {
+        artworkObj.userId.profileImageUrl = profileImageUrls[index];
+      }
+      return {
+        ...artworkObj,
+        thumbnailUrl: signedUrls[index],
+      };
+    });
 
   } catch (error) {
     console.error("Failed to fetch artworks:", error);
@@ -117,11 +140,19 @@ export default async function ArtworkList() {
                   <div className="flex items-center space-x-1">
                     {artwork.userId ? (
                       <>
-                        <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
-                          <span className="text-xs font-bold text-gray-600">
-                            {artwork.userId.username.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                        {(artwork.userId as unknown as { profileImageUrl?: string }).profileImageUrl ? (
+                          <img
+                            src={(artwork.userId as unknown as { profileImageUrl: string }).profileImageUrl}
+                            alt={`${artwork.userId.username}のプロフィール画像`}
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-xs font-bold text-gray-600">
+                              {artwork.userId.username.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                         <Link 
                           href={`/users/${artwork.userId.username}`} 
                           className="text-xs text-gray-500 hover:text-blue-600 hover:underline transition-colors break-words"

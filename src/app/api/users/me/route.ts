@@ -39,9 +39,29 @@ export async function GET() {
         if (!user) {
             return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
         }
+
+        const userObject = user.toObject();
+
+        // プロフィール画像のSigned URLを生成
+        let profileImageUrl = null;
+        if (user.profileImage?.path) {
+            try {
+                const options = {
+                    version: 'v4' as const,
+                    action: 'read' as const,
+                    expires: Date.now() + 15 * 60 * 1000, // 15分
+                };
+                const [signedUrl] = await bucket.file(user.profileImage.path).getSignedUrl(options);
+                profileImageUrl = signedUrl;
+            } catch (error) {
+                console.warn('プロフィール画像のSigned URL生成に失敗:', error);
+            }
+        }
+
         return NextResponse.json({
-            ...user.toObject(),
-            showNSFW: user.showNSFW || false
+            ...userObject,
+            showNSFW: user.showNSFW || false,
+            profileImageUrl
         });
 
     } catch (error) {

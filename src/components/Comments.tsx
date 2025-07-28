@@ -93,14 +93,26 @@ export default function Comments({ artworkId }: { artworkId: string }) {
             
             return (
               <div key={comment._id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  isDeletedUser ? 'bg-gray-100' : 'bg-blue-100'
-                }`}>
-                  <span className={`text-xs font-bold ${
-                    isDeletedUser ? 'text-gray-500' : 'text-blue-600'
-                  }`}>
-                    {userInitial}
-                  </span>
+                <div className="flex-shrink-0">
+                  {isDeletedUser ? (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <span className="text-xs font-bold text-gray-500">
+                        削
+                      </span>
+                    </div>
+                  ) : (comment.userId as unknown as { profileImageUrl?: string }).profileImageUrl ? (
+                    <img
+                      src={(comment.userId as unknown as { profileImageUrl: string }).profileImageUrl}
+                      alt={`${username}のプロフィール画像`}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-xs font-bold text-blue-600">
+                        {userInitial}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">

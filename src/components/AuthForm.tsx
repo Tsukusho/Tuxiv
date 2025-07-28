@@ -62,8 +62,8 @@ export default function AuthForm({ isRegister }: Props) {
             </h2>
             <p className="text-gray-600 text-sm mt-2">
               {isRegister 
-                ? 'Tuxivへようこそ。新しいアカウントを作成しましょう' 
-                : 'Tuxivにログインして作品を楽しみましょう'
+                ? 'Tuxivへようこそ' 
+                : 'Tuxivにログイン'
               }
             </p>
           </div>
