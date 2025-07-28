@@ -1,4 +1,3 @@
-// /src/app/following/page.tsx
 import FollowingArtworkList from "@/components/FollowingArtworkList";
 
 export default function FollowingPage() {

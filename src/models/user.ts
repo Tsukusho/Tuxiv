@@ -6,6 +6,11 @@ export interface IUserData {
   fullName: string;
   mutedTags?: string[];
   showNSFW?: boolean;
+  profileImage?: {
+    path: string;
+    mimeType: string;
+    uploadedAt: Date;
+  };
 }
 
 // Mongoose DocumentとしてのUserの型
@@ -15,6 +20,11 @@ export interface IUser extends Document {
   hashedPassword: string;
   mutedTags?: string[];
   showNSFW?: boolean;
+  profileImage?: {
+    path: string;
+    mimeType: string;
+    uploadedAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +51,14 @@ const UserSchema: Schema = new Schema({
   showNSFW: {
     type: Boolean,
     default: false,
+  },
+  profileImage: {
+    type: {
+      path: { type: String, required: true },
+      mimeType: { type: String, required: true },
+      uploadedAt: { type: Date, required: true }
+    },
+    required: false,
   },
 }, { timestamps: true });
 

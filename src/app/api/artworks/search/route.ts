@@ -3,6 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import { bucket } from '@/lib/gcs';
+import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export async function GET(req: Request) {
   try {
@@ -20,8 +22,34 @@ export async function GET(req: Request) {
     // カンマ区切りのタグを配列に変換
     const tagsArray = tagsQuery.split(',').map(tag => tag.trim());
 
-    // NOTE: { tags: { $all: ... } } を使うことで、指定された全てのタグを含む作品を検索(AND検索)
-    const query = { tags: { $all: tagsArray } };
+    // ユーザー設定を取得
+    let mutedTags: string[] = [];
+    let showNSFW = false;
+    
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+        const user = await User.findById(decoded.id).select('mutedTags showNSFW');
+        if (user) {
+          mutedTags = user.mutedTags || [];
+          showNSFW = user.showNSFW || false;
+        }
+      } catch (e) {
+        console.log("Invalid token, proceeding as guest.");
+      }
+    }
+
+    // 検索クエリにフィルタを適用
+    const query: Record<string, unknown> = { 
+      tags: { $all: tagsArray, $nin: mutedTags }
+    };
+    
+    if (!showNSFW) {
+      query.isNSFW = false;
+    }
 
     const artworks = await Artwork.find(query)
       .sort({ createdAt: -1 })

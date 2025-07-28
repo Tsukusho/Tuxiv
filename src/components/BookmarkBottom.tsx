@@ -15,11 +15,13 @@ export default function BookmarkButton({ artworkId }: Props) {
       try {
         const res = await fetch(`/api/artworks/${artworkId}/bookmark`, {
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Cookieを確実に送信
         });
         if (res.ok) {
           const data = await res.json();
           setIsBookmarked(data.isBookmarked);
         } else {
+          console.error('Bookmark status fetch failed:', res.status, res.statusText);
           setIsBookmarked(false);
         }
       } catch (error) {
@@ -43,15 +45,22 @@ export default function BookmarkButton({ artworkId }: Props) {
       const res = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Cookieを確実に送信
       });
 
       if (!res.ok) {
         setIsBookmarked(previousBookmarkState);
         const data = await res.json();
-        alert(data.error || 'エラーが発生しました。');
+        console.error('Bookmark operation failed:', res.status, data);
+        if (res.status === 401) {
+          alert('ログインが必要です。再度ログインしてください。');
+        } else {
+          alert(data.error || 'エラーが発生しました。');
+        }
       }
     } catch (error) {
       setIsBookmarked(previousBookmarkState);
+      console.error('Bookmark network error:', error);
       alert('ネットワークエラーが発生しました。');
     } finally {
       setIsLoading(false);
@@ -60,8 +69,10 @@ export default function BookmarkButton({ artworkId }: Props) {
 
   if (isBookmarked === null) {
     return (
-      <button disabled className="p-2 rounded-full bg-gray-200 opacity-50">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+      <button disabled className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-400 cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+        </svg>
       </button>
     );
   }
@@ -70,10 +81,22 @@ export default function BookmarkButton({ artworkId }: Props) {
     <button
       onClick={handleBookmark}
       disabled={isLoading}
-      className="p-2 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
+      className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 disabled:opacity-50 ${
+        isBookmarked
+          ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+      title={isBookmarked ? 'ブックマークを解除' : 'ブックマークに追加'}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isBookmarked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" className={isBookmarked ? 'text-blue-500' : 'text-gray-600'}/>
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        className="h-5 w-5" 
+        fill={isBookmarked ? 'currentColor' : 'none'} 
+        viewBox="0 0 24 24" 
+        stroke="currentColor" 
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
       </svg>
     </button>
   );

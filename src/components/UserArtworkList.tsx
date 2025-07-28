@@ -5,6 +5,8 @@ import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import { IUserData } from '@/models/user';
+import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 // usernameをpropsで受け取る
 type Props = {
@@ -21,11 +23,39 @@ export default async function UserArtworkList({ username }: Props) {
     const user = await User.findOne({ username }).lean<IUserData>();
 
     if (user) {
-      // 2. ユーザーIDで作品を検索
-      const artworks = await Artwork.find({ 
-          userId: user._id, 
-          isAnonymous: false // 匿名投稿は非表示
-        })
+      // 2. 閲覧者のフィルタリング設定を取得
+      let mutedTags: string[] = [];
+      let showNSFW = false;
+      
+      const cookieStore = await cookies();
+      const token = cookieStore.get('token')?.value;
+      
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+          const viewer = await User.findById(decoded.id).select('mutedTags showNSFW');
+          if (viewer) {
+            mutedTags = viewer.mutedTags || [];
+            showNSFW = viewer.showNSFW || false;
+          }
+        } catch (e) {
+          console.log("Invalid token, proceeding as guest.");
+        }
+      }
+
+      // 3. フィルタリングクエリを作成
+      const query: Record<string, unknown> = { 
+        userId: user._id, 
+        isAnonymous: false, // 匿名投稿は非表示
+        tags: { $nin: mutedTags }
+      };
+      
+      if (!showNSFW) {
+        query.isNSFW = false;
+      }
+
+      // 4. ユーザーIDで作品を検索
+      const artworks = await Artwork.find(query)
         .sort({ createdAt: -1 })
         .limit(1000); // 表示件数を制限
 

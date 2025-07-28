@@ -24,6 +24,11 @@ export async function GET() {
 
     await dbConnect();
 
+    // ユーザー設定を取得
+    const user = await User.findById(userId).select('mutedTags showNSFW');
+    const mutedTags = user?.mutedTags || [];
+    const showNSFW = user?.showNSFW || false;
+
     const bookmarks = await Bookmark.find({ userId })
       .sort({ createdAt: -1 })
       .populate({
@@ -39,12 +44,26 @@ export async function GET() {
     // populateしたartworkIdから作品情報だけを取り出す
     const artworks = bookmarks.map(b => b.artworkId);
 
-    // 削除済みユーザーの投稿を除外
-    const validArtworks = artworks.filter(artwork => artwork && artwork.userId);
+    // フィルタリングを適用
+    const filteredArtworks = artworks.filter(artwork => {
+      if (!artwork || !artwork.userId) return false; // 削除済みユーザーの投稿を除外
+      
+      // ミュートタグチェック
+      if (artwork.tags && artwork.tags.some((tag: string) => mutedTags.includes(tag))) {
+        return false;
+      }
+      
+      // NSFW チェック
+      if (!showNSFW && artwork.isNSFW) {
+        return false;
+      }
+      
+      return true;
+    });
 
     // 署名付きURLを生成
     const artworksWithSignedUrls = await Promise.all(
-        validArtworks.map(async (artwork) => {
+        filteredArtworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({

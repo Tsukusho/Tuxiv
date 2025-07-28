@@ -24,7 +24,7 @@ async function getArtwork(id: string): Promise<IArtworkData | null> {
     await dbConnect();
     const artwork = await Artwork.findById(id).populate({
       path: 'userId',
-      select: 'username',
+      select: 'username profileImage',
       model: User,
     });
 
@@ -38,6 +38,7 @@ async function getArtwork(id: string): Promise<IArtworkData | null> {
 
     const artworkObject = JSON.parse(JSON.stringify(artwork));
     
+    // 作品画像のSigned URLを生成
     const signedUrls = await Promise.all(
       artwork.images.map((image: IImage) => bucket.file(image.path).getSignedUrl(options))
     );
@@ -46,6 +47,16 @@ async function getArtwork(id: string): Promise<IArtworkData | null> {
         ...image,
         url: signedUrls[index][0],
     }));
+
+    // プロフィール画像のSigned URLを生成
+    if (artworkObject.userId && artworkObject.userId.profileImage?.path) {
+      try {
+        const [profileSignedUrl] = await bucket.file(artworkObject.userId.profileImage.path).getSignedUrl(options);
+        artworkObject.userId.profileImageUrl = profileSignedUrl;
+      } catch (error) {
+        console.warn('プロフィール画像のSigned URL生成に失敗:', error);
+      }
+    }
 
     return artworkObject;
   } catch (error) {

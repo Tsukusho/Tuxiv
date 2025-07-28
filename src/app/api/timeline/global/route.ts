@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       .limit(limit)
       .populate({
         path: 'userId',
-        select: 'username',
+        select: 'username profileImage',
         model: User,
       });
 
@@ -64,6 +64,19 @@ export async function GET(req: Request) {
                 });
                 artworkObject.thumbnailUrl = signedUrl;
             }
+            
+            // プロフィール画像のSigned URLを生成
+            if (artworkObject.userId && artworkObject.userId.profileImage?.path) {
+              try {
+                const [profileSignedUrl] = await bucket.file(artworkObject.userId.profileImage.path).getSignedUrl({
+                  version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
+                });
+                artworkObject.userId.profileImageUrl = profileSignedUrl;
+              } catch (error) {
+                console.warn('プロフィール画像のSigned URL生成に失敗:', error);
+              }
+            }
+            
             return artworkObject;
         })
     );
