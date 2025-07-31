@@ -3,6 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface UploadedImage {
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  signedUrl: string;
+}
+
 export default function ArtworkForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -10,13 +17,92 @@ export default function ArtworkForm() {
   const [isNSFW, setIsNSFW] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files));
+      const selectedFiles = Array.from(e.target.files);
+      setFiles(selectedFiles);
+      setUploadedImages([]);
+      setUploadProgress({});
+      
+      // 自動的にファイルのアップロードを開始
+      await uploadFiles(selectedFiles);
+    }
+  };
+
+  const uploadFiles = async (filesToUpload: File[]) => {
+    setIsUploading(true);
+    setError('');
+    const uploaded: UploadedImage[] = [];
+
+    try {
+      for (const file of filesToUpload) {
+        // 署名付きURL取得
+        const signedUrlResponse = await fetch('/api/upload/signed-url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+          }),
+        });
+
+        if (!signedUrlResponse.ok) {
+          const errorData = await signedUrlResponse.json();
+          throw new Error(errorData.error || '署名付きURL取得に失敗しました');
+        }
+
+        const { signedUrl, fileName, fileType, fileSize } = await signedUrlResponse.json();
+
+        // プログレス追跡用のキー
+        const progressKey = `${file.name}-${Date.now()}`;
+        setUploadProgress(prev => ({ ...prev, [progressKey]: 0 }));
+
+        // GCSへ直接アップロード
+        const xhr = new XMLHttpRequest();
+        
+        await new Promise<void>((resolve, reject) => {
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const percentComplete = (event.loaded / event.total) * 100;
+              setUploadProgress(prev => ({ ...prev, [progressKey]: percentComplete }));
+            }
+          });
+
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              uploaded.push({ fileName, fileType, fileSize, signedUrl });
+              setUploadProgress(prev => ({ ...prev, [progressKey]: 100 }));
+              resolve();
+            } else {
+              reject(new Error(`アップロードに失敗しました: ${xhr.status}`));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error('アップロードエラーが発生しました'));
+
+          xhr.open('PUT', signedUrl);
+          xhr.setRequestHeader('Content-Type', fileType);
+          xhr.send(file);
+        });
+      }
+
+      setUploadedImages(uploaded);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err instanceof Error ? err.message : 'アップロードに失敗しました');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -25,22 +111,28 @@ export default function ArtworkForm() {
     setError('');
     setIsSubmitting(true);
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('tags', tags);
-    formData.append('isNSFW', String(isNSFW));
-    formData.append('isAnonymous', String(isAnonymous));
-    files.forEach(file => {
-      formData.append('images', file);
-    });
+    if (uploadedImages.length === 0) {
+      setError('画像のアップロードが完了していません。');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-          const res = await fetch('/api/artworks', {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-    });
+      const res = await fetch('/api/artworks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title,
+          description,
+          tags: tags.split(',').map(tag => tag.trim()),
+          isNSFW,
+          isAnonymous,
+          uploadedImages,
+        }),
+      });
 
       const data = await res.json();
 
@@ -100,7 +192,29 @@ export default function ArtworkForm() {
                   />
                 </div>
                 {files.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-2">{files.length}個のファイルが選択されています</p>
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 mb-2">{files.length}個のファイルが選択されています</p>
+                    
+                    {isUploading && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-blue-600">アップロード中...</p>
+                        {Object.entries(uploadProgress).map(([key, progress]) => (
+                          <div key={key} className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {uploadedImages.length > 0 && !isUploading && (
+                      <div className="text-sm text-green-600">
+                        ✓ {uploadedImages.length}個のファイルのアップロードが完了しました
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -171,10 +285,13 @@ export default function ArtworkForm() {
 
               <button 
                 type="submit" 
-                disabled={isSubmitting} 
+                disabled={isSubmitting || isUploading || uploadedImages.length === 0} 
                 className="btn-primary w-full py-3 text-base disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? '投稿中...' : '作品を投稿する'}
+                {isSubmitting ? '投稿中...' : 
+                 isUploading ? 'アップロード中...' : 
+                 uploadedImages.length === 0 ? '画像をアップロードしてください' :
+                 '作品を投稿する'}
               </button>
             </form>
           </div>

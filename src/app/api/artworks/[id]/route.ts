@@ -19,7 +19,7 @@ export async function GET(
     try {
       await dbConnect();
       const { id } = await context.params;
-
+  
       const artwork = await Artwork.findById(id).populate({
         path: 'userId',
         select: 'username',
