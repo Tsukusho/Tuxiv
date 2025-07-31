@@ -92,7 +92,7 @@ export default function Comments({ artworkId }: { artworkId: string }) {
             const userInitial = username.charAt(0).toUpperCase();
             
             return (
-              <div key={comment._id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
+            <div key={comment._id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
                 <div className="flex-shrink-0">
                   {isDeletedUser ? (
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -108,29 +108,29 @@ export default function Comments({ artworkId }: { artworkId: string }) {
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-xs font-bold text-blue-600">
+                <span className="text-xs font-bold text-blue-600">
                         {userInitial}
-                      </span>
+                </span>
                     </div>
                   )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-1">
                     <p className={`font-semibold text-sm ${
                       isDeletedUser ? 'text-gray-500 italic' : 'text-gray-900'
                     }`}>
                       {username}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(comment.createdAt).toLocaleString('ja-JP', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-500">
+                    {new Date(comment.createdAt).toLocaleString('ja-JP', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
                   <p className="text-sm text-gray-700 leading-relaxed break-words">{comment.text}</p>
                 </div>
               </div>

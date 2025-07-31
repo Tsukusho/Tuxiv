@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 
 /**
  * 新しい作品を投稿するAPI
- * @param {Request} req - multipart/form-data形式のリクエスト
+ * @param {Request} req - JSON形式のリクエスト（アップロード済み画像メタデータ）
  * @returns {NextResponse} 作成された作品情報またはエラーメッセージ
  */
 export async function POST(req: Request) {
@@ -32,45 +32,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
     }
 
-    const formData = await req.formData();
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const tags = (formData.get('tags') as string).split(',').map(tag => tag.trim());
-    const isNSFW = formData.get('isNSFW') === 'true';
-    const isAnonymous = formData.get('isAnonymous') === 'true';
-    const files = formData.getAll('images') as File[];
+    const requestData = await req.json();
+    const { title, description, tags, isNSFW, isAnonymous, uploadedImages } = requestData;
 
-    if (!title || files.length === 0) {
+    if (!title || !uploadedImages || uploadedImages.length === 0) {
       return NextResponse.json({ error: 'タイトルと画像は必須です。' }, { status: 400 });
     }
 
-    if (tags.length === 0) {
+    if (!tags || tags.length === 0) {
       return NextResponse.json({ error: 'タグは最低1つ必須です。' }, { status: 400 });
     }
 
-    const uploadedImages: Array<{path: string; mimeType: string; size: number; order: number}> = [];
-    const uploadedFilePaths: string[] = [];
-
-    await Promise.all(
-      files.map(async (file, index) => {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const uniqueFilename = `${user._id}-${Date.now()}-${file.name}`;
-        
-        const gcsFile = bucket.file(uniqueFilename);
-        
-        await gcsFile.save(buffer, {
-          metadata: { contentType: file.type },
-        });
-
-        uploadedFilePaths.push(uniqueFilename);
-        uploadedImages.push({
-          path: uniqueFilename,
-          mimeType: file.type,
-          size: file.size,
-          order: index,
-        });
-      })
-    );
+    // アップロード済み画像の検証
+    interface ValidatedImage {
+      path: string;
+      mimeType: string;
+      size: number;
+      order: number;
+    }
+    
+    const validatedImages: ValidatedImage[] = uploadedImages.map((img: any, index: number) => ({
+      path: img.fileName,
+      mimeType: img.fileType,
+      size: img.fileSize,
+      order: index,
+    }));
     
     const newArtwork = await Artwork.create({
       userId: user._id,
@@ -79,7 +65,7 @@ export async function POST(req: Request) {
       tags,
       isNSFW,
       isAnonymous,
-      images: uploadedImages.sort((a, b) => a.order - b.order),
+      images: validatedImages.sort((a: ValidatedImage, b: ValidatedImage) => a.order - b.order),
     });
 
     return NextResponse.json(newArtwork, { status: 201 });

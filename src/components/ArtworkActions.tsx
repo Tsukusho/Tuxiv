@@ -57,20 +57,20 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
                     className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-sm font-bold text-blue-600">
-                      {artwork.userId.username.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <span className="text-sm font-bold text-blue-600">
+                {artwork.userId.username.charAt(0).toUpperCase()}
+              </span>
+            </div>
                 )}
-                <div>
-                  <Link 
-                    href={`/users/${artwork.userId.username}`} 
+            <div>
+              <Link 
+                href={`/users/${artwork.userId.username}`} 
                     className="font-semibold text-gray-900 hover:text-blue-600 transition-colors break-words"
-                  >
-                    {artwork.userId.username}
-                  </Link>
-                </div>
+              >
+                {artwork.userId.username}
+              </Link>
+            </div>
               </>
             ) : (
               <>

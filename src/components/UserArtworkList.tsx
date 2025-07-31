@@ -45,7 +45,7 @@ export default async function UserArtworkList({ username }: Props) {
 
       // 3. フィルタリングクエリを作成
       const query: Record<string, unknown> = { 
-        userId: user._id, 
+          userId: user._id, 
         isAnonymous: false, // 匿名投稿は非表示
         tags: { $nin: mutedTags }
       };

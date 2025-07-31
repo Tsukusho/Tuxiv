@@ -12,10 +12,10 @@ export default function BookmarkList() {
   useEffect(() => {
     const fetchBookmarks = async () => {
       try {
-              const res = await fetch('/api/users/me/bookmarks', {
-        headers: { 'Content-Type': 'application/json' },
+        const res = await fetch('/api/users/me/bookmarks', {
+          headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-      });
+        });
         if (res.ok) {
           const data = await res.json();
           setArtworks(data.artworks); 

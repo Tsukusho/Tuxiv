@@ -20,10 +20,10 @@ export default function MyProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-              const res = await fetch('/api/profile/me', {
-        headers: { 'Content-Type': 'application/json' },
+        const res = await fetch('/api/profile/me', {
+          headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-      });
+        });
         if (res.ok) {
           const data = await res.json();
           setProfileData(data);
