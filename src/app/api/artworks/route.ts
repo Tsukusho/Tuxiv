@@ -1,7 +1,6 @@
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import { bucket } from '@/lib/gcs';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import jwt from 'jsonwebtoken';
@@ -44,6 +43,12 @@ export async function POST(req: Request) {
     }
 
     // アップロード済み画像の検証
+    interface UploadedImageData {
+      fileName: string;
+      fileType: string;
+      fileSize: number;
+    }
+    
     interface ValidatedImage {
       path: string;
       mimeType: string;
@@ -51,7 +56,7 @@ export async function POST(req: Request) {
       order: number;
     }
     
-    const validatedImages: ValidatedImage[] = uploadedImages.map((img: any, index: number) => ({
+    const validatedImages: ValidatedImage[] = uploadedImages.map((img: UploadedImageData, index: number) => ({
       path: img.fileName,
       mimeType: img.fileType,
       size: img.fileSize,
