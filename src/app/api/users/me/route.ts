@@ -90,10 +90,6 @@ export async function PUT(req: Request) {
                 return NextResponse.json({ error: 'ユーザー名は2文字以上で入力してください。' }, { status: 400 });
             }
             
-            if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-                return NextResponse.json({ error: 'ユーザー名は半角英数字、アンダースコア、ハイフンのみ使用できます。' }, { status: 400 });
-            }
-            
             // 重複チェック
             const existingUser = await User.findOne({ username, _id: { $ne: userId } });
             if (existingUser) {

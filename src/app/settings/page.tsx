@@ -203,14 +203,12 @@ export default function SettingsPage() {
 
         <form onSubmit={(e) => handleUpdate(e, 'username')}>
           <h2 className="text-xl font-semibold mb-2">ユーザー名変更</h2>
-          <p className="text-sm text-gray-500 mb-2">他のユーザーから見える表示名です。半角英数字、アンダースコア、ハイフンが使用できます。</p>
+          <p className="text-sm text-gray-500 mb-2">他のユーザーから見える表示名です。</p>
           <input 
             type="text" 
             value={username} 
             onChange={(e) => setUsername(e.target.value)} 
             required 
-            pattern="^[a-zA-Z0-9_-]+$"
-            title="半角英数字、アンダースコア、ハイフンのみ使用可能です"
             className="w-full px-3 py-2 border rounded-md mb-2" 
           />
           <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">更新</button>
