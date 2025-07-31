@@ -23,9 +23,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ファイル名とタイプは必須です。' }, { status: 400 });
     }
 
-    // ファイルサイズチェック（例：50MB制限）
-    if (fileSize > 50 * 1024 * 1024) {
-      return NextResponse.json({ error: 'ファイルサイズは50MB以下にしてください。' }, { status: 400 });
+    // ファイルサイズチェック
+    if (fileSize > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'ファイルサイズは10MB以下にしてください。' }, { status: 400 });
     }
 
     // 一意のファイル名生成
