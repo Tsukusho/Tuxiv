@@ -39,6 +39,7 @@ export async function GET() {
         if (!user) return null;
         const query: FilterQuery<IArtwork> = {
           userId: followingId,
+          isAnonymous: false, // 匿名投稿を除外
           tags: { $nin: mutedTags },
         };
         if (currentUser.showNSFW !== true) {
@@ -47,7 +48,7 @@ export async function GET() {
 
         const artworks = await Artwork.find(query)
         .sort({ createdAt: -1 })
-        .limit(100); // 各ユーザーごとに最新10件を取得 全件は一旦しない
+        .limit(100); // 各ユーザーごとに最新100件を取得
 
         // 削除済みユーザーの投稿を除外（通常following内では発生しないが安全のため）
         const validArtworks = artworks.filter(artwork => artwork.userId);

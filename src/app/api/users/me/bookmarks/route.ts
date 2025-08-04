@@ -61,10 +61,16 @@ export async function GET() {
       return true;
     });
 
-    // 署名付きURLを生成
+    // 署名付きURLを生成し、匿名投稿の処理を行う
     const artworksWithSignedUrls = await Promise.all(
         filteredArtworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
+            
+            // 匿名投稿の場合はユーザー情報を削除
+            if (artwork.isAnonymous) {
+                delete artworkObject.userId;
+            }
+            
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({
                     version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
