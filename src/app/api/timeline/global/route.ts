@@ -58,6 +58,12 @@ export async function GET(req: Request) {
     const artworksWithSignedUrls = await Promise.all(
       validArtworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
+            
+            // 匿名投稿の場合はユーザー情報を削除
+            if (artwork.isAnonymous) {
+                delete artworkObject.userId;
+            }
+            
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({
                     version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
@@ -65,8 +71,8 @@ export async function GET(req: Request) {
                 artworkObject.thumbnailUrl = signedUrl;
             }
             
-            // プロフィール画像のSigned URLを生成
-            if (artworkObject.userId && artworkObject.userId.profileImage?.path) {
+            // プロフィール画像のSigned URLを生成（匿名でない場合のみ）
+            if (!artwork.isAnonymous && artworkObject.userId && artworkObject.userId.profileImage?.path) {
               try {
                 const [profileSignedUrl] = await bucket.file(artworkObject.userId.profileImage.path).getSignedUrl({
                   version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
