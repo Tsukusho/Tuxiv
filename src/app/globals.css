@@ -107,3 +107,11 @@ body {
     gap: 16px;
   }
 }
+
+/* FullCalendarの土日ヘッダーの色をカスタマイズ */
+.fc-day-sun .fc-col-header-cell-cushion {
+  color: #ef4444; /* Tailwindのred-500 */
+}
+.fc-day-sat .fc-col-header-cell-cushion {
+  color: #3b82f6; /* Tailwindのblue-500 */
+}
