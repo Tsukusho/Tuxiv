@@ -5,13 +5,53 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { EventInput } from '@fullcalendar/core';
+import { EventInput, EventApi } from '@fullcalendar/core';
 import jaLocale from '@fullcalendar/core/locales/ja';
 
 interface ScheduleEventData {
   title: string;
   description?: string;
   candidateDates: { start: string; end: string }[];
+}
+
+interface AvailabilitySlot {
+  start: string;
+  end: string;
+  type: 'available' | 'undecided';
+}
+
+interface UserAvailability {
+  grade: string;
+  roles: string[];
+  availableSlots: AvailabilitySlot[];
+}
+
+interface CurrentUser {
+  fullName: string;
+}
+
+interface ApiResponse {
+  event: ScheduleEventData;
+  currentUser: CurrentUser;
+  currentUserAvailability: UserAvailability;
+}
+
+interface DateSelectInfo {
+  startStr: string;
+  endStr: string;
+  view: {
+    calendar: {
+      unselect: () => void;
+      addEvent: (event: EventInput) => void;
+    };
+  };
+}
+
+interface EventClickInfo {
+  event: {
+    title: string;
+    remove: () => void;
+  };
 }
 
 export default function AvailabilityInput({ eventId }: { eventId: string }) {
@@ -35,7 +75,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         const res = await fetch(`/api/schedule/events/${eventId}`);
         if (!res.ok) throw new Error('データ取得に失敗');
         
-        const { event, currentUser, currentUserAvailability } = await res.json();
+        const { event, currentUser, currentUserAvailability }: ApiResponse = await res.json();
         setEventData(event);
 
         if (currentUser) {
@@ -46,12 +86,13 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
           setGrade(currentUserAvailability.grade);
           setRoles(currentUserAvailability.roles.join(', '));
           
-          const savedEvents = currentUserAvailability.availableSlots.map((slot: any) => ({
-            title: slot.type === 'available' ? '空き' : '未定',
+          const savedEvents = currentUserAvailability.availableSlots.map((slot: AvailabilitySlot) => ({
+            title: slot.type === 'available' ? '参加可能' : '未定',
             start: slot.start,
             end: slot.end,
-            backgroundColor: slot.type === 'available' ? '#3b82f6' : '#f59e0b',
-            borderColor: slot.type === 'available' ? '#3b82f6' : '#f59e0b',
+            backgroundColor: slot.type === 'available' ? '#1976d2' : '#ffa726',
+            borderColor: slot.type === 'available' ? '#1565c0' : '#ff9800',
+            textColor: '#ffffff',
             extendedProps: { type: slot.type }
           }));
           setMyEvents(savedEvents);
@@ -74,7 +115,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     setIsProfileSaved(true);
   };
 
-  const handleDateSelect = (selectInfo: any) => {
+  const handleDateSelect = (selectInfo: DateSelectInfo) => {
     if (!isProfileSaved) {
       alert('先に「プロフィールを保存して次に進む」ボタンを押してください。');
       return;
@@ -83,29 +124,31 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     calendarApi.unselect();
     const newEvent = {
       id: `${+new Date()}`,
-      title: inputType === 'available' ? '空き' : '未定',
+      title: inputType === 'available' ? '参加可能' : '未定',
       start: selectInfo.startStr,
       end: selectInfo.endStr,
-      backgroundColor: inputType === 'available' ? '#3b82f6' : '#f59e0b',
-      borderColor: inputType === 'available' ? '#3b82f6' : '#f59e0b',
+      backgroundColor: inputType === 'available' ? '#1976d2' : '#ffa726',
+      borderColor: inputType === 'available' ? '#1565c0' : '#ff9800',
+      textColor: '#ffffff',
       extendedProps: { type: inputType }
     };
     calendarApi.addEvent(newEvent);
   };
   
-  // ✨【変更】無限ループを防ぐための修正
-  const handleEventsSet = (events: any) => {
-    const plainEvents = events.map((e: any) => ({
+  const handleEventsSet = (events: EventApi[]) => {
+    const plainEvents = events
+      .filter((e: EventApi) => e.start && e.end) // nullをフィルタリング
+      .map((e: EventApi) => ({
         id: e.id,
         title: e.title,
-        start: e.start,
-        end: e.end,
+        start: e.start!,
+        end: e.end!,
         backgroundColor: e.backgroundColor,
         borderColor: e.borderColor,
-        extendedProps: e.extendedProps,
-    }));
+        textColor: e.textColor,
+        extendedProps: e.extendedProps as { type?: 'available' | 'undecided' },
+      }));
 
-    // 新しい予定と現在の予定を文字列で比較し、違いがある場合のみstateを更新する
     if (JSON.stringify(plainEvents) !== JSON.stringify(myEvents)) {
         setMyEvents(plainEvents);
     }
@@ -124,7 +167,6 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         type: e.extendedProps?.type || 'available' 
     }));
 
-    // 🔍 フロントエンドデバッグログ
     console.log('=== フロントエンド送信データ ===');
     console.log('myEvents:', myEvents);
     console.log('送信するavailableSlots:', availableSlots);
@@ -150,100 +192,427 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     }
   };
 
-  if (isLoading) return <div className="text-center p-8">読み込み中...</div>;
-  if (!eventData) return <div className="text-center p-8 text-red-500">イベントが見つかりません</div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span className="ml-3 text-gray-600">読み込み中...</span>
+    </div>
+  );
+  
+  if (!eventData) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center text-red-500">
+        <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p>イベントが見つかりません</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      <div className="md:w-72 md:flex-shrink-0 space-y-4 p-4 border rounded-lg shadow-sm bg-white self-start flex flex-col h-full">
-        <div className="flex-grow">
-            <h2 className="text-xl font-semibold border-b pb-2">1. プロフィール入力</h2>
-            <p className="text-sm text-gray-600 mt-2">あなたの情報を入力してください。</p>
-            <div className="mt-4 space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">名前</label>
-                    <input type="text" value={userName} readOnly className="mt-1 w-full rounded-md border-gray-300 shadow-sm bg-gray-100 cursor-not-allowed"/>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">学年(代) <span className="text-red-500">*</span></label>
-                    <input 
-                        type="number" 
-                        placeholder="3 など半角数字のみ" 
-                        value={grade} 
-                        onChange={e => setGrade(e.target.value)}
-                        disabled={isProfileSaved}
-                        className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">役職 (コンマ区切り)</label>
-                    <input 
-                        type="text" 
-                        placeholder="記録,役者 など半角コンマ区切り" 
-                        value={roles} 
-                        onChange={e => setRoles(e.target.value)}
-                        disabled={isProfileSaved}
-                        className="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
-                    />
-                </div>
-                <button onClick={handleProfileSave} disabled={isProfileSaved} className="w-full bg-gray-700 text-white py-2 rounded-md hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                  {isProfileSaved ? '✓ 保存済み' : 'プロフィールを保存して次に進む'}
-                </button>
-            </div>
-        </div>
-        
-        <div className="mt-auto pt-4 border-t">
-            <h2 className="text-xl font-semibold">2. 空き時間を入力</h2>
-            <p className="text-sm text-gray-600 mb-4">カレンダーの空いている時間をドラッグして入力してください。</p>
-            <button onClick={handleAvailabilitySubmit} className="w-full bg-indigo-600 text-white py-2.5 rounded-md text-lg font-semibold shadow-sm hover:bg-indigo-700">
-                この内容で登録・更新する
-            </button>
-        </div>
-      </div>
+    <div className="google-calendar-container">
+      <style jsx>{`
+        .google-calendar-container {
+          min-height: 100vh;
+          background: #f8f9fa;
+          font-family: 'Google Sans', 'Roboto', sans-serif;
+        }
 
-      <div className="flex-grow">
-        <div className={`p-2 border rounded-lg bg-white shadow-sm ${!isProfileSaved ? 'opacity-40 cursor-not-allowed' : ''}`}>
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            headerToolbar={{
-              left: 'prev,next',
-              center: 'title',
-              right: 'inputTypeToggle timeGridWeek,timeGridDay'
-            }}
-            customButtons={{
-                inputTypeToggle: {
-                    text: inputType === 'available' ? 'モード: 空き' : 'モード: 未定',
-                    click: () => {
-                        setInputType(current => current === 'available' ? 'undecided' : 'available');
-                    }
-                }
-            }}
-            initialView="timeGridWeek"
-            locale={jaLocale}
-            allDaySlot={false}
-            height="calc(100vh - 120px)"
-            slotMinTime="00:00:00"
-            slotMaxTime="24:00:00"
-            scrollTime="09:00:00"
-            dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
-            dayHeaderClassNames={(arg) => {
-                if (arg.date.getDay() === 0) return ['fc-day-sun'];
-                if (arg.date.getDay() === 6) return ['fc-day-sat'];
-                return [];
-            }}
-            events={myEvents}
-            selectable={isProfileSaved}
-            selectMirror={true}
-            editable={isProfileSaved}
-            select={handleDateSelect}
-            eventsSet={handleEventsSet}
-            eventClick={ (clickInfo) => {
-                if (!isProfileSaved) return;
-                if(confirm(`この予定を削除しますか？`)){
+        /* Google Calendar ライクなサイドバー */
+        .gcal-sidebar {
+          background: #ffffff;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+          border: 1px solid #e8eaed;
+          overflow: hidden;
+        }
+
+        .gcal-sidebar-header {
+          padding: 24px 20px 16px 20px;
+          border-bottom: 1px solid #e8eaed;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+
+        .gcal-profile-section {
+          padding: 20px;
+          border-bottom: 1px solid #e8eaed;
+        }
+
+        .gcal-form-group {
+          margin-bottom: 16px;
+        }
+
+        .gcal-label {
+          display: block;
+          font-size: 14px;
+          font-weight: 500;
+          color: #3c4043;
+          margin-bottom: 6px;
+        }
+
+        .gcal-input {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid #dadce0;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          background: #ffffff;
+        }
+
+        .gcal-input:focus {
+          outline: none;
+          border-color: #1a73e8;
+          box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        .gcal-input:disabled {
+          background-color: #f8f9fa;
+          color: #5f6368;
+          cursor: not-allowed;
+        }
+
+        .gcal-btn {
+          width: 100%;
+          padding: 12px 24px;
+          border-radius: 24px;
+          border: none;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .gcal-btn-primary {
+          background: #1a73e8;
+          color: white;
+        }
+
+        .gcal-btn-primary:hover:not(:disabled) {
+          background: #1557b2;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .gcal-btn-primary:disabled {
+          background: #5f6368;
+          cursor: not-allowed;
+        }
+
+        .gcal-btn-success {
+          background: #34a853;
+          color: white;
+        }
+
+        .gcal-btn-success:hover {
+          background: #2d8f47;
+          box-shadow: 0 2px 8px rgba(52, 168, 83, 0.3);
+        }
+
+        .gcal-action-section {
+          padding: 20px;
+          background: #fafbfc;
+        }
+
+        /* Google Calendar ライクなカレンダー */
+        .gcal-calendar-container {
+          background: #ffffff;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+          border: 1px solid #e8eaed;
+          overflow: hidden;
+        }
+
+        .gcal-calendar-header {
+          padding: 16px 20px;
+          background: #ffffff;
+          border-bottom: 1px solid #e8eaed;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .gcal-mode-toggle {
+          background: #f1f3f4;
+          color: #3c4043;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .gcal-mode-toggle:hover {
+          background: #e8eaed;
+        }
+
+        .gcal-mode-toggle.available {
+          background: #e3f2fd;
+          color: #1976d2;
+        }
+
+        .gcal-mode-toggle.undecided {
+          background: #fff3e0;
+          color: #f57c00;
+        }
+
+        /* FullCalendar カスタマイズ */
+        .gcal-calendar-container :global(.fc) {
+          font-family: 'Google Sans', 'Roboto', sans-serif;
+          font-size: 14px;
+        }
+
+        .gcal-calendar-container :global(.fc-toolbar) {
+          padding: 0 20px 16px 20px;
+          background: #ffffff;
+        }
+
+        .gcal-calendar-container :global(.fc-toolbar-title) {
+          font-size: 22px;
+          font-weight: 400;
+          color: #3c4043;
+        }
+
+        .gcal-calendar-container :global(.fc-button) {
+          background: #f8f9fa !important;
+          border: 1px solid #dadce0 !important;
+          color: #3c4043 !important;
+          border-radius: 4px !important;
+          font-weight: 500 !important;
+          text-transform: none !important;
+          box-shadow: none !important;
+          height: 36px !important;
+          padding: 0 16px !important;
+        }
+
+        .gcal-calendar-container :global(.fc-button:hover) {
+          background: #f1f3f4 !important;
+          border-color: #dadce0 !important;
+        }
+
+        .gcal-calendar-container :global(.fc-button-active) {
+          background: #1a73e8 !important;
+          border-color: #1a73e8 !important;
+          color: white !important;
+        }
+
+        .gcal-calendar-container :global(.fc-daygrid-day) {
+          border-color: #e8eaed;
+        }
+
+        .gcal-calendar-container :global(.fc-timegrid-slot) {
+          border-color: #e8eaed;
+          height: 20px;
+        }
+
+        .gcal-calendar-container :global(.fc-col-header-cell) {
+          background: #f8f9fa;
+          border-color: #e8eaed;
+          font-weight: 500;
+          color: #5f6368;
+          text-transform: uppercase;
+          font-size: 11px;
+          letter-spacing: 0.8px;
+        }
+
+        .gcal-calendar-container :global(.fc-event) {
+          border-radius: 4px !important;
+          border: none !important;
+          font-size: 12px !important;
+          font-weight: 500 !important;
+          padding: 2px 6px !important;
+          cursor: pointer !important;
+        }
+
+        .gcal-calendar-container :global(.fc-event:hover) {
+          opacity: 0.8;
+        }
+
+        .gcal-calendar-container :global(.fc-day-today) {
+          background-color: rgba(26, 115, 232, 0.04) !important;
+        }
+
+        .gcal-calendar-container :global(.fc-day-sun .fc-col-header-cell-cushion) {
+          color: #d93025;
+        }
+
+        .gcal-calendar-container :global(.fc-day-sat .fc-col-header-cell-cushion) {
+          color: #1a73e8;
+        }
+
+        /* 無効化時のオーバーレイ */
+        .gcal-disabled-overlay {
+          position: relative;
+        }
+
+        .gcal-disabled-overlay::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.7);
+          z-index: 10;
+          pointer-events: none;
+          border-radius: 12px;
+        }
+
+        .gcal-disabled-overlay.disabled::before {
+          display: block;
+        }
+
+        .gcal-disabled-overlay:not(.disabled)::before {
+          display: none;
+        }
+      `}</style>
+
+      <div className="flex gap-6 p-6 min-h-screen">
+        {/* Google Calendar ライクなサイドバー */}
+        <div className="w-80 flex-shrink-0">
+          <div className="gcal-sidebar">
+            
+            <div className="gcal-profile-section">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">プロフィール情報</h3>
+              
+              <div className="gcal-form-group">
+                <label className="gcal-label">お名前</label>
+                <input 
+                  type="text" 
+                  value={userName} 
+                  readOnly 
+                  className="gcal-input"
+                  style={{ background: '#f8f9fa', cursor: 'not-allowed' }}
+                />
+              </div>
+              
+              <div className="gcal-form-group">
+                <label className="gcal-label">
+                  学年(代) <span style={{ color: '#d93025' }}>*</span>
+                </label>
+                <input 
+                  type="number" 
+                  placeholder="3" 
+                  value={grade} 
+                  onChange={e => setGrade(e.target.value)}
+                  disabled={isProfileSaved}
+                  className="gcal-input"
+                />
+              </div>
+              
+              <div className="gcal-form-group">
+                <label className="gcal-label">役職 (コンマ区切り)</label>
+                <input 
+                  type="text" 
+                  placeholder="記録,役者" 
+                  value={roles} 
+                  onChange={e => setRoles(e.target.value)}
+                  disabled={isProfileSaved}
+                  className="gcal-input"
+                />
+              </div>
+              
+              <button 
+                onClick={handleProfileSave} 
+                disabled={isProfileSaved} 
+                className={`gcal-btn ${isProfileSaved ? 'gcal-btn-primary' : 'gcal-btn-primary'}`}
+              >
+                {isProfileSaved ? (
+                  <>
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    保存済み
+                  </>
+                ) : (
+                  '次のステップへ進む'
+                )}
+              </button>
+            </div>
+            
+            <div className="gcal-action-section">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">空き時間の入力</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                カレンダーで参加可能な時間をドラッグして選択してください。
+              </p>
+              
+              <button 
+                onClick={handleAvailabilitySubmit} 
+                className="gcal-btn gcal-btn-success"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                登録・更新する
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Google Calendar ライクなカレンダー */}
+        <div className="flex-1">
+          <div className={`gcal-calendar-container gcal-disabled-overlay ${!isProfileSaved ? 'disabled' : ''}`}>
+            <div className="gcal-calendar-header">
+              <h3 className="text-lg font-medium text-gray-900">カレンダー</h3>
+              <button 
+                onClick={() => setInputType(current => current === 'available' ? 'undecided' : 'available')}
+                className={`gcal-mode-toggle ${inputType}`}
+              >
+                {inputType === 'available' ? '参加可能モード' : '未定モード'}
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: 'timeGridWeek,timeGridDay'
+                }}
+                initialView="timeGridWeek"
+                locale={jaLocale}
+                allDaySlot={false}
+                height="calc(100vh - 280px)"
+                slotMinTime="06:00:00"
+                slotMaxTime="24:00:00"
+                scrollTime="09:00:00"
+                slotDuration="00:30:00"
+                slotLabelInterval="01:00:00"
+                dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
+                dayHeaderClassNames={(arg) => {
+                  if (arg.date.getDay() === 0) return ['fc-day-sun'];
+                  if (arg.date.getDay() === 6) return ['fc-day-sat'];
+                  return [];
+                }}
+                events={myEvents}
+                selectable={isProfileSaved}
+                selectMirror={true}
+                editable={isProfileSaved}
+                select={handleDateSelect}
+                eventsSet={handleEventsSet}
+                eventClick={(clickInfo: EventClickInfo) => {
+                  if (!isProfileSaved) return;
+                  if(confirm(`この予定「${clickInfo.event.title}」を削除しますか？`)){
                     clickInfo.event.remove()
-                }
-            }}
-          />
+                  }
+                }}
+                nowIndicator={true}
+                slotLabelFormat={{
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  meridiem: false
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
