@@ -1,6 +1,7 @@
 import { IArtworkData } from '@/models/artwork';
 import { bucket } from '@/lib/gcs';
 import Link from 'next/link';
+import Image from 'next/image';
 import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
@@ -36,7 +37,7 @@ export default async function SearchResultsList({ tags }: Props) {
             mutedTags = user.mutedTags || [];
             showNSFW = user.showNSFW || false;
           }
-        } catch (e) {
+        } catch {
           console.log("Invalid token, proceeding as guest.");
         }
       }
@@ -92,11 +93,12 @@ export default async function SearchResultsList({ tags }: Props) {
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {artworksWithSignedUrls.map((artwork) => (
         <Link href={`/artworks/${artwork._id}`} key={artwork._id} className="group block">
-          <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-200">
-            <img
+          <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-200 relative">
+            <Image
               src={artwork.thumbnailUrl}
               alt={artwork.title}
-              className="h-full w-full object-cover object-center transition-transform group-hover:scale-105"
+              fill
+              className="object-cover object-center transition-transform group-hover:scale-105"
             />
           </div>
           <h3 className="mt-2 text-sm font-semibold text-gray-800">{artwork.title}</h3>

@@ -169,7 +169,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     });
 
     return allSlotEvents.filter(event => event.extendedProps.availableNames.length >= availableLimit);
-  }, [eventData, allAvailabilities, availableLimit, activeSelectedRoles, draftSelectedGrades]);
+  }, [eventData, allAvailabilities, availableLimit, activeSelectedRoles, activeSelectedGrades, draftSelectedRoles.length, draftSelectedGrades.length]);
   
   const allRoles = useMemo(() => {
     if (!Array.isArray(allAvailabilities)) {
