@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -66,6 +66,84 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
   const [myEvents, setMyEvents] = useState<EventInput[]>([]);
   const [inputType, setInputType] = useState<'available' | 'undecided'>('available');
+
+  // タッチイベント制御用のstate
+  const [touchCount, setTouchCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // モバイル判定
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // タッチイベントハンドリング
+  useEffect(() => {
+    if (!isMobile || !calendarRef.current) return;
+
+    const calendarElement = calendarRef.current;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touchCount = e.touches.length;
+      setTouchCount(touchCount);
+      
+      // 二本指の場合はスクロール用クラスを追加
+      if (touchCount >= 2) {
+        calendarElement.classList.add('two-finger-scroll');
+      } else {
+        calendarElement.classList.remove('two-finger-scroll');
+        
+        // 一本指の場合のみカレンダー領域でのスクロール無効化
+        const calendarArea = calendarElement.querySelector('.fc-view-harness');
+        if (calendarArea && calendarArea.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touchCount = e.touches.length;
+      
+      if (touchCount >= 2) {
+        // 二本指の場合はスクロールを許可
+        calendarElement.classList.add('two-finger-scroll');
+      } else {
+        // 一本指の場合はスクロールを無効化
+        calendarElement.classList.remove('two-finger-scroll');
+        const calendarArea = calendarElement.querySelector('.fc-view-harness');
+        if (calendarArea && calendarArea.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const remainingTouches = e.touches.length;
+      setTouchCount(remainingTouches);
+      
+      // 全ての指が離れたらクラスを削除
+      if (remainingTouches === 0) {
+        calendarElement.classList.remove('two-finger-scroll');
+      }
+    };
+
+    // パッシブではなくアクティブリスナーとして追加
+    calendarElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+    calendarElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    calendarElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      calendarElement.removeEventListener('touchstart', handleTouchStart);
+      calendarElement.removeEventListener('touchmove', handleTouchMove);
+      calendarElement.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -363,6 +441,24 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
           color: #f57c00;
         }
 
+        /* メインレイアウト */
+        .main-layout {
+          display: flex;
+          gap: 24px;
+          padding: 24px;
+          min-height: 100vh;
+        }
+
+        .sidebar-container {
+          width: 320px;
+          flex-shrink: 0;
+        }
+
+        .calendar-container {
+          flex: 1;
+          min-width: 0;
+        }
+
         /* FullCalendar カスタマイズ */
         .gcal-calendar-container :global(.fc) {
           font-family: 'Google Sans', 'Roboto', sans-serif;
@@ -472,11 +568,181 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         .gcal-disabled-overlay:not(.disabled)::before {
           display: none;
         }
+
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+          .main-layout {
+            flex-direction: column;
+            padding: 16px;
+            gap: 16px;
+          }
+
+          .sidebar-container {
+            width: 100%;
+            order: 1;
+          }
+
+          .calendar-container {
+            width: 100%;
+            order: 2;
+          }
+
+          .gcal-calendar-container {
+            margin: 0 -16px;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+          }
+
+          .gcal-calendar-container :global(.fc-toolbar) {
+            padding: 12px 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .gcal-calendar-container :global(.fc-toolbar-title) {
+            font-size: 18px;
+            order: 1;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 8px;
+          }
+
+          .gcal-calendar-container :global(.fc-toolbar-chunk) {
+            display: flex;
+            justify-content: center;
+          }
+
+          .gcal-calendar-header {
+            padding: 12px 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .gcal-calendar-header h3 {
+            font-size: 16px;
+            margin: 0;
+          }
+
+          .gcal-mode-toggle {
+            padding: 6px 12px;
+            font-size: 12px;
+          }
+
+          /* モバイル用カレンダー設定 */
+          .mobile-calendar-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            /* タッチアクション制御 */
+            touch-action: manipulation;
+          }
+
+          /* カレンダー内のタッチエリア制御 */
+          .mobile-calendar-wrapper :global(.fc-view-harness) {
+            touch-action: none; /* 一本指ではスクロール無効 */
+          }
+
+          /* 二本指スクロール時は有効化 */
+          .mobile-calendar-wrapper.two-finger-scroll {
+            touch-action: pinch-zoom pan-x pan-y;
+          }
+
+          .mobile-calendar-wrapper.two-finger-scroll :global(.fc-view-harness) {
+            touch-action: pinch-zoom pan-x pan-y;
+          }
+
+          .gcal-calendar-container :global(.fc-view-harness) {
+            min-width: 480px;
+          }
+
+          .gcal-calendar-container :global(.fc-timegrid-slot) {
+            height: 16px;
+          }
+
+          .gcal-calendar-container :global(.fc-timegrid-slot-label) {
+            font-size: 10px;
+          }
+
+          .gcal-calendar-container :global(.fc-col-header-cell) {
+            font-size: 10px;
+            padding: 4px 2px;
+          }
+
+          .gcal-calendar-container :global(.fc-event) {
+            font-size: 10px !important;
+            padding: 1px 4px !important;
+          }
+
+          .gcal-sidebar {
+            border-radius: 8px;
+          }
+
+          .gcal-profile-section {
+            padding: 16px;
+          }
+
+          .gcal-action-section {
+            padding: 16px;
+          }
+
+          /* モバイル用ヒント表示 */
+          .mobile-hint {
+            background: #e3f2fd;
+            border: 1px solid #1976d2;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #1565c0;
+          }
+
+          .mobile-hint .hint-icon {
+            display: inline-block;
+            margin-right: 6px;
+            font-weight: bold;
+          }
+
+          .gcal-form-group {
+            margin-bottom: 12px;
+          }
+
+          .gcal-input {
+            padding: 10px 12px;
+            font-size: 16px; /* iOS zoom対策 */
+          }
+
+          .gcal-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .main-layout {
+            padding: 12px;
+          }
+
+          .gcal-calendar-container {
+            margin: 0 -12px;
+          }
+
+          .gcal-calendar-container :global(.fc-view-harness) {
+            min-width: 400px;
+          }
+
+          .gcal-calendar-container :global(.fc-toolbar) {
+            padding: 8px 12px;
+          }
+
+          .gcal-calendar-header {
+            padding: 8px 12px;
+          }
+        }
       `}</style>
 
-      <div className="flex gap-6 p-6 min-h-screen">
+      <div className="main-layout">
         {/* Google Calendar ライクなサイドバー */}
-        <div className="w-80 flex-shrink-0">
+        <div className="sidebar-container">
           <div className="gcal-sidebar">
             
             <div className="gcal-profile-section">
@@ -539,8 +805,22 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
             
             <div className="gcal-action-section">
               <h3 className="text-lg font-medium text-gray-900 mb-3">空き時間の入力</h3>
+              
+              {/* スマホ版ヒント */}
+              {isMobile && (
+                <div className="mobile-hint">
+                  <div className="hint-icon">💡</div>
+                  <strong>スマホでの操作方法：</strong><br />
+                  • 一本指でタップ&ドラッグ：予定を入力<br />
+                  • 二本指でスワイプ：カレンダーをスクロール
+                </div>
+              )}
+              
               <p className="text-sm text-gray-600 mb-4">
-                カレンダーで参加可能な時間をドラッグして選択してください。
+                {isMobile 
+                  ? 'カレンダーで参加可能な時間を指でタップ&ドラッグして選択してください。'
+                  : 'カレンダーで参加可能な時間をドラッグして選択してください。'
+                }
               </p>
               
               <button 
@@ -557,7 +837,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         </div>
 
         {/* Google Calendar ライクなカレンダー */}
-        <div className="flex-1">
+        <div className="calendar-container">
           <div className={`gcal-calendar-container gcal-disabled-overlay ${!isProfileSaved ? 'disabled' : ''}`}>
             <div className="gcal-calendar-header">
               <h3 className="text-lg font-medium text-gray-900">カレンダー</h3>
@@ -569,48 +849,50 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
               </button>
             </div>
             
-            <div className="p-4">
-              <FullCalendar
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: 'timeGridWeek,timeGridDay'
-                }}
-                initialView="timeGridWeek"
-                locale={jaLocale}
-                allDaySlot={false}
-                height="calc(100vh - 280px)"
-                slotMinTime="06:00:00"
-                slotMaxTime="24:00:00"
-                scrollTime="09:00:00"
-                slotDuration="00:30:00"
-                slotLabelInterval="01:00:00"
-                dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
-                dayHeaderClassNames={(arg) => {
-                  if (arg.date.getDay() === 0) return ['fc-day-sun'];
-                  if (arg.date.getDay() === 6) return ['fc-day-sat'];
-                  return [];
-                }}
-                events={myEvents}
-                selectable={isProfileSaved}
-                selectMirror={true}
-                editable={isProfileSaved}
-                select={handleDateSelect}
-                eventsSet={handleEventsSet}
-                eventClick={(clickInfo: EventClickInfo) => {
-                  if (!isProfileSaved) return;
-                  if(confirm(`この予定「${clickInfo.event.title}」を削除しますか？`)){
-                    clickInfo.event.remove()
-                  }
-                }}
-                nowIndicator={true}
-                slotLabelFormat={{
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  meridiem: false
-                }}
-              />
+            <div className="mobile-calendar-wrapper" ref={calendarRef}>
+              <div className="p-4">
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridWeek,timeGridDay'
+                  }}
+                  initialView="timeGridWeek"
+                  locale={jaLocale}
+                  allDaySlot={false}
+                  height="calc(100vh - 280px)"
+                  slotMinTime="06:00:00"
+                  slotMaxTime="24:00:00"
+                  scrollTime="09:00:00"
+                  slotDuration="00:30:00"
+                  slotLabelInterval="01:00:00"
+                  dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
+                  dayHeaderClassNames={(arg) => {
+                    if (arg.date.getDay() === 0) return ['fc-day-sun'];
+                    if (arg.date.getDay() === 6) return ['fc-day-sat'];
+                    return [];
+                  }}
+                  events={myEvents}
+                  selectable={isProfileSaved}
+                  selectMirror={true}
+                  editable={isProfileSaved}
+                  select={handleDateSelect}
+                  eventsSet={handleEventsSet}
+                  eventClick={(clickInfo: EventClickInfo) => {
+                    if (!isProfileSaved) return;
+                    if(confirm(`この予定「${clickInfo.event.title}」を削除しますか？`)){
+                      clickInfo.event.remove()
+                    }
+                  }}
+                  nowIndicator={true}
+                  slotLabelFormat={{
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    meridiem: false
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
