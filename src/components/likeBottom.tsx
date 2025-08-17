@@ -61,7 +61,7 @@ export default function LikeButton({ artworkId, initialLikeCount }: Props) {
         const data = await res.json();
         alert(data.error || 'エラーが発生しました。');
       }
-    } catch (error) {
+    } catch {
       // エラーが起きたらUIをクリック前の状態に戻す
       setIsLiked(previousLikeState);
       setLikeCount(previousLikeCount);

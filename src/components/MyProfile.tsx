@@ -3,6 +3,7 @@
 
 import { IArtworkData } from '@/models/artwork';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 interface ProfileData {
@@ -104,10 +105,11 @@ export default function MyProfile() {
               <Link href={`/artworks/${artwork._id}`} key={artwork._id} className="group block">
                 <div className="card overflow-hidden">
                   <div className="aspect-square w-full overflow-hidden bg-gray-100 relative">
-                    <img
+                    <Image
                       src={artwork.thumbnailUrl}
                       alt={artwork.title}
-                      className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                      fill
+                      className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute bottom-3 left-3 right-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">

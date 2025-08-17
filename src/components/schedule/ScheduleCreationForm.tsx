@@ -48,8 +48,8 @@ export default function ScheduleCreationForm() {
       // イベント作成後、そのイベントの出欠入力ページにリダイレクト
       router.push(`/schedule/event/${newEvent._id}`);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'エラーが発生しました');
     } finally {
       setIsSubmitting(false);
     }

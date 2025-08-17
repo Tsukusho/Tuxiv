@@ -3,7 +3,8 @@ import dbConnect from '@/lib/dbConnect';
 import Availability from '@/models/availability';
 import jwt from 'jsonwebtoken';
 
-export async function POST(request: NextRequest, { params }: { params: { id:string } }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params;
   try {
     // 認証チェック
     const token = request.cookies.get('token')?.value;
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: { id:stri
     console.log('受信したavailableSlots:', JSON.stringify(availableSlots, null, 2));
     
     // availableSlotsの各スロットにtypeフィールドが存在することを確認
-    const slotsWithType = availableSlots.map((slot: any) => ({
+    const slotsWithType = availableSlots.map((slot: { start: string; end: string; type?: string }) => ({
       start: slot.start,
       end: slot.end,
       type: slot.type || 'available' // 明示的にデフォルト値を設定

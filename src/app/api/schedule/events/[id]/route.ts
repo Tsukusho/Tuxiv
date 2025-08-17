@@ -5,7 +5,8 @@ import Availability from '@/models/availability';
 import User from '@/models/user'; // 👈 Tuxivの既存Userモデルをインポート
 import jwt from 'jsonwebtoken';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params;
   try {
     // 1. 認証チェック (ログインしているか確認)
     const token = request.cookies.get('token')?.value;
