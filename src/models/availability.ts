@@ -1,0 +1,31 @@
+import mongoose, { Schema, Document, models, Model } from 'mongoose';
+
+export interface IAvailability extends Document {
+  eventId: Schema.Types.ObjectId;
+  userId: Schema.Types.ObjectId;
+  name: string;
+  grade: string;
+  roles: string[];
+  availableSlots: {
+    start: Date;
+    end: Date;
+    type: 'available' | 'undecided'; 
+  }[];
+}
+
+const AvailabilitySchema: Schema = new Schema({
+  eventId: { type: Schema.Types.ObjectId, ref: 'ScheduleEvent', required: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  name: { type: String, required: true },
+  grade: { type: String, required: true },
+  roles: [{ type: String }],
+  availableSlots: [{
+    start: { type: Date, required: true },
+    end: { type: Date, required: true },
+    type: { type: String, enum: ['available', 'undecided'], required: true, default: 'available' }, // 👈 ✨【変更】この行を追加
+  }],
+}, { timestamps: true });
+
+const Availability: Model<IAvailability> = models.Availability || mongoose.model<IAvailability>('Availability', AvailabilitySchema);
+
+export default Availability;
