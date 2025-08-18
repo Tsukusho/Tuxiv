@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -68,9 +68,10 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
   const [inputType, setInputType] = useState<'available' | 'undecided'>('available');
 
   // タッチイベント制御用のstate
-  const [touchCount, setTouchCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const calendarRef = useRef<HTMLDivElement>(null);
+  const [isInputMode, setIsInputMode] = useState(false);
+  const [firstTapTime, setFirstTapTime] = useState<string | null>(null);
+
 
   // モバイル判定
   useEffect(() => {
@@ -83,67 +84,50 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // タッチイベントハンドリング
-  useEffect(() => {
-    if (!isMobile || !calendarRef.current) return;
+  // スマホ用の時間セル選択処理
+  const handleTimeSlotClick = (dateInfo: { dateStr?: string; date?: Date }) => {
+    if (!isMobile || !isInputMode || !isProfileSaved) return;
 
-    const calendarElement = calendarRef.current;
+    const clickedTime = dateInfo.dateStr || dateInfo.date?.toISOString();
+    if (!clickedTime) return;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      const touchCount = e.touches.length;
-      setTouchCount(touchCount);
+    if (!firstTapTime) {
+      // 1回目のタップ：開始時刻を記録
+      setFirstTapTime(clickedTime);
+    } else {
+      // 2回目のタップ：予定を作成
+      const start = new Date(firstTapTime);
+      const end = new Date(clickedTime);
       
-      // 二本指の場合はスクロール用クラスを追加
-      if (touchCount >= 2) {
-        calendarElement.classList.add('two-finger-scroll');
-      } else {
-        calendarElement.classList.remove('two-finger-scroll');
-        
-        // 一本指の場合のみカレンダー領域でのスクロール無効化
-        const calendarArea = calendarElement.querySelector('.fc-view-harness');
-        if (calendarArea && calendarArea.contains(e.target as Node)) {
-          e.preventDefault();
+      // 開始時刻と終了時刻を正しい順序に調整
+      const finalStart = start <= end ? start : end;
+      const finalEnd = start <= end ? end : start;
+
+      // 最小30分の予定にする
+      if (finalEnd.getTime() - finalStart.getTime() < 30 * 60 * 1000) {
+        finalEnd.setTime(finalStart.getTime() + 30 * 60 * 1000);
+      }
+
+      // 既存のhandleDateSelectを使用して予定を作成
+      const selectInfo = {
+        startStr: finalStart.toISOString(),
+        endStr: finalEnd.toISOString(),
+        view: {
+          calendar: {
+            unselect: () => {},
+            addEvent: (event: EventInput) => {
+              setMyEvents(prev => [...prev, event]);
+            }
+          }
         }
-      }
-    };
+      };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchCount = e.touches.length;
-      
-      if (touchCount >= 2) {
-        // 二本指の場合はスクロールを許可
-        calendarElement.classList.add('two-finger-scroll');
-      } else {
-        // 一本指の場合はスクロールを無効化
-        calendarElement.classList.remove('two-finger-scroll');
-        const calendarArea = calendarElement.querySelector('.fc-view-harness');
-        if (calendarArea && calendarArea.contains(e.target as Node)) {
-          e.preventDefault();
-        }
-      }
-    };
+      handleDateSelect(selectInfo);
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      const remainingTouches = e.touches.length;
-      setTouchCount(remainingTouches);
-      
-      // 全ての指が離れたらクラスを削除
-      if (remainingTouches === 0) {
-        calendarElement.classList.remove('two-finger-scroll');
-      }
-    };
-
-    // パッシブではなくアクティブリスナーとして追加
-    calendarElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-    calendarElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-    calendarElement.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-    return () => {
-      calendarElement.removeEventListener('touchstart', handleTouchStart);
-      calendarElement.removeEventListener('touchmove', handleTouchMove);
-      calendarElement.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile]);
+      // 状態をリセット
+      setFirstTapTime(null);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -640,37 +624,55 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
           /* カレンダー内のタッチエリア制御 */
           .mobile-calendar-wrapper :global(.fc-view-harness) {
             touch-action: none; /* 一本指ではスクロール無効 */
-          }
-
-          /* 二本指スクロール時は有効化 */
-          .mobile-calendar-wrapper.two-finger-scroll {
-            touch-action: pinch-zoom pan-x pan-y;
-          }
-
-          .mobile-calendar-wrapper.two-finger-scroll :global(.fc-view-harness) {
-            touch-action: pinch-zoom pan-x pan-y;
-          }
-
-          .gcal-calendar-container :global(.fc-view-harness) {
             min-width: 480px;
           }
 
+          /* スマホ版：カレンダーの縦幅を1.5倍に拡張 */
+          .mobile-calendar-wrapper :global(.fc) {
+            height: calc(150vh - 420px) !important; /* 1.5倍に拡張 */
+          }
+
           .gcal-calendar-container :global(.fc-timegrid-slot) {
-            height: 16px;
+            height: 30px; /* デフォルトの1.5倍 (20px → 30px) */
           }
 
           .gcal-calendar-container :global(.fc-timegrid-slot-label) {
-            font-size: 10px;
+            font-size: 12px; /* 読みやすいサイズ */
+            line-height: 30px; /* スロット高さに合わせる */
           }
 
           .gcal-calendar-container :global(.fc-col-header-cell) {
-            font-size: 10px;
-            padding: 4px 2px;
+            font-size: 12px;
+            padding: 8px 4px; /* より大きなタップエリア */
+            height: 40px; /* ヘッダーも拡張 */
           }
 
           .gcal-calendar-container :global(.fc-event) {
-            font-size: 10px !important;
-            padding: 1px 4px !important;
+            font-size: 11px !important;
+            padding: 3px 6px !important; /* より大きなタップエリア */
+            min-height: 20px !important; /* 最小高さを設定 */
+          }
+
+          /* 入力モード時のカレンダー強調 */
+          .mobile-calendar-wrapper.input-mode {
+            border: 2px solid #34a853;
+            box-shadow: 0 0 0 4px rgba(52, 168, 83, 0.1);
+          }
+
+          .mobile-calendar-wrapper.input-mode :global(.fc-timegrid-slot) {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+          }
+
+          /* 入力モード時のホバー効果もより大きく */
+          .mobile-calendar-wrapper.input-mode :global(.fc-timegrid-slot:hover) {
+            background-color: rgba(52, 168, 83, 0.15) !important;
+          }
+
+          /* 1回目タップ後の状態 */
+          .mobile-calendar-wrapper.awaiting-second-tap {
+            border-color: #ff9800;
+            box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.1);
           }
 
           .gcal-sidebar {
@@ -700,6 +702,56 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
             display: inline-block;
             margin-right: 6px;
             font-weight: bold;
+          }
+
+          /* 入力モード切り替えボタン */
+          .mobile-input-toggle {
+            margin-bottom: 16px;
+          }
+
+          .input-mode-btn {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #dadce0;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #5f6368;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+          }
+
+          .input-mode-btn:hover:not(:disabled) {
+            border-color: #1a73e8;
+            background: #f8f9fa;
+          }
+
+          .input-mode-btn.active {
+            border-color: #34a853;
+            background: #e8f5e8;
+            color: #2d8f47;
+            animation: pulse 2s infinite;
+          }
+
+          .input-mode-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+
+          .input-mode-icon {
+            font-size: 16px;
+          }
+
+          /* パルスアニメーション */
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
           }
 
           .gcal-form-group {
@@ -811,8 +863,34 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
                 <div className="mobile-hint">
                   <div className="hint-icon">💡</div>
                   <strong>スマホでの操作方法：</strong><br />
-                  • 一本指でタップ&ドラッグ：予定を入力<br />
-                  • 二本指でスワイプ：カレンダーをスクロール
+                  {isInputMode ? (
+                    <>
+                      • 1回目タップ：開始時刻を選択<br />
+                      • 2回目タップ：終了時刻を選択し予定を作成<br />
+                      {firstTapTime && <span style={{color: '#d93025'}}>• 次のタップで終了時刻を選択してください</span>}
+                    </>
+                  ) : (
+                    '• 入力モードをONにして時刻を選択してください'
+                  )}
+                </div>
+              )}
+
+              {/* スマホ版入力モード切り替えボタン */}
+              {isMobile && (
+                <div className="mobile-input-toggle">
+                  <button 
+                    onClick={() => {
+                      setIsInputMode(!isInputMode);
+                      setFirstTapTime(null);
+                    }}
+                    className={`input-mode-btn ${isInputMode ? 'active' : ''}`}
+                    disabled={!isProfileSaved}
+                  >
+                    <span className="input-mode-icon">
+                      {isInputMode ? '📍' : '⏰'}
+                    </span>
+                    {isInputMode ? '入力モード ON' : '入力モード OFF'}
+                  </button>
                 </div>
               )}
               
@@ -849,7 +927,11 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
               </button>
             </div>
             
-            <div className="mobile-calendar-wrapper" ref={calendarRef}>
+            <div className={`mobile-calendar-wrapper ${
+              isMobile && isInputMode ? 'input-mode' : ''
+            } ${
+              isMobile && firstTapTime ? 'awaiting-second-tap' : ''
+            }`}>
               <div className="p-4">
                 <FullCalendar
                   plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -891,6 +973,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
                     minute: '2-digit',
                     meridiem: false
                   }}
+                  dateClick={handleTimeSlotClick}
                 />
               </div>
             </div>
