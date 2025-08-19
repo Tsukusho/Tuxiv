@@ -33,8 +33,10 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
   const [availableLimit, setAvailableLimit] = useState(1); 
   const [draftSelectedRoles, setDraftSelectedRoles] = useState<string[]>([]);
   const [draftSelectedGrades, setDraftSelectedGrades] = useState<string[]>([]);
+  const [draftSelectedNames, setDraftSelectedNames] = useState<string[]>([]);
   const [activeSelectedRoles, setActiveSelectedRoles] = useState<string[]>([]);
   const [activeSelectedGrades, setActiveSelectedGrades] = useState<string[]>([]);
+  const [activeSelectedNames, setActiveSelectedNames] = useState<string[]>([]);
 
   const [popoverContent, setPopoverContent] = useState<{ content: React.ReactNode; x: number; y: number } | null>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
@@ -109,10 +111,11 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
 
     const targetMembers = allAvailabilities.filter(a =>
       (activeSelectedRoles.length === 0 || a.roles.some(r => activeSelectedRoles.includes(r))) &&
-      (activeSelectedGrades.length === 0 || activeSelectedGrades.includes(a.grade))
+      (activeSelectedGrades.length === 0 || activeSelectedGrades.includes(a.grade)) &&
+      (activeSelectedNames.length === 0 || activeSelectedNames.includes(a.name))
     );
 
-    if (targetMembers.length === 0 && (draftSelectedRoles.length > 0 || draftSelectedGrades.length > 0)) {
+    if (targetMembers.length === 0 && (draftSelectedRoles.length > 0 || draftSelectedGrades.length > 0 || draftSelectedNames.length > 0)) {
         return [];
     }
     
@@ -182,7 +185,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     });
 
     return allSlotEvents.filter(event => event.extendedProps.availableNames.length >= availableLimit);
-  }, [eventData, allAvailabilities, availableLimit, activeSelectedRoles, activeSelectedGrades, draftSelectedRoles.length, draftSelectedGrades.length]);
+  }, [eventData, allAvailabilities, availableLimit, activeSelectedRoles, activeSelectedGrades, activeSelectedNames, draftSelectedRoles.length, draftSelectedGrades.length, draftSelectedNames.length]);
   
   const allRoles = useMemo(() => {
     if (!Array.isArray(allAvailabilities)) {
@@ -198,9 +201,25 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     return [...new Set(allAvailabilities.map(a => a.grade))];
   }, [allAvailabilities]);
 
+  const allNames = useMemo(() => {
+    if (!Array.isArray(allAvailabilities)) {
+      return [];
+    }
+    return [...new Set(allAvailabilities.map(a => a.name))].sort();
+  }, [allAvailabilities]);
+
   const handleApplyFilters = () => {
     setActiveSelectedRoles(draftSelectedRoles);
     setActiveSelectedGrades(draftSelectedGrades);
+    setActiveSelectedNames(draftSelectedNames);
+  };
+
+  const handleSelectAllNames = () => {
+    setDraftSelectedNames(allNames);
+  };
+
+  const handleDeselectAllNames = () => {
+    setDraftSelectedNames([]);
   };
 
   if (isLoading) return <div className="text-center p-8">読み込み中...</div>;
@@ -257,6 +276,41 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
               <span className="text-sm text-gray-500">{gradeCounts[grade] || 0}人</span>
             </div>
            ))}
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium">名前で絞り込み</label>
+            <div className="space-x-2">
+              <button 
+                onClick={handleSelectAllNames}
+                className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
+              >
+                全選択
+              </button>
+              <button 
+                onClick={handleDeselectAllNames}
+                className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
+              >
+                全解除
+              </button>
+            </div>
+          </div>
+          {allNames.map(name => (
+            <div key={name} className="flex items-center">
+              <input 
+                type="checkbox" 
+                id={name} 
+                value={name}
+                checked={draftSelectedNames.includes(name)}
+                onChange={e => {
+                  setDraftSelectedNames(e.target.checked ? [...draftSelectedNames, name] : draftSelectedNames.filter(n => n !== name));
+                }} 
+                className="mr-2"
+              />
+              <label htmlFor={name}>{name}</label>
+            </div>
+          ))}
         </div>
         <div className="pt-4 border-t">
             <button 
