@@ -116,15 +116,25 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
         return [];
     }
     
+    // availabilitiesデータから実際の日時範囲を取得
+    const allSlots = targetMembers.flatMap(member => member.availableSlots);
+    
+    if (allSlots.length === 0) {
+        return []; // availableSlotsがない場合は空を返す
+    }
+    
+    // 最小・最大日時を取得
+    const allDates = allSlots.flatMap(slot => [new Date(slot.start), new Date(slot.end)]);
+    const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    
+    // 30分刻みでスロットを生成
     const slots = [];
-    for (const candidate of eventData.candidateDates) {
-        let current = new Date(candidate.start);
-        const end = new Date(candidate.end);
-        while (current < end) {
-            const next = new Date(current.getTime() + 30 * 60 * 1000);
-            slots.push({ start: current, end: next });
-            current = next;
-        }
+    let current = new Date(minDate);
+    while (current < maxDate) {
+        const next = new Date(current.getTime() + 30 * 60 * 1000);
+        slots.push({ start: new Date(current), end: new Date(next) });
+        current = next;
     }
 
     const allSlotEvents = slots.map(slot => {
@@ -132,9 +142,12 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
       const undecidedMembers: string[] = [];
       
       for (const member of targetMembers) {
-        const foundSlot = member.availableSlots.find(avail => 
-          new Date(avail.start) <= slot.start && new Date(avail.end) >= slot.end
-        );
+        const foundSlot = member.availableSlots.find(avail => {
+          const availStart = new Date(avail.start);
+          const availEnd = new Date(avail.end);
+          // 時間の重複チェック: スロットが重複している場合に一致とする
+          return availStart < slot.end && availEnd > slot.start;
+        });
 
         if (foundSlot?.type === 'undecided') {
             undecidedMembers.push(member.name);
