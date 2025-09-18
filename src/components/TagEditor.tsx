@@ -6,11 +6,9 @@ export default function TagEditor({ artworkId, initialTags }: { artworkId: strin
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState(initialTags.join(', '));
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const onSave = async () => {
     setSaving(true);
-    setError(null);
     const tags = input.split(',').map(t => t.trim()).filter(Boolean);
     try {
       const res = await fetch(`/api/artworks/${artworkId}/tags`, {
@@ -26,7 +24,7 @@ export default function TagEditor({ artworkId, initialTags }: { artworkId: strin
       // 成功時は再読み込み
       window.location.reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'エラーが発生しました');
+      alert(e instanceof Error ? e.message : 'エラーが発生しました');
     } finally {
       setSaving(false);
     }
@@ -50,7 +48,6 @@ export default function TagEditor({ artworkId, initialTags }: { artworkId: strin
             onChange={(e) => setInput(e.target.value)}
             placeholder="カンマ区切りで入力 (例: 風景, 夜空)"
           />
-          {error && <p className="text-xs text-red-600">{error}</p>}
           <button className="btn-primary" onClick={onSave} disabled={saving}>
             {saving ? '保存中...' : '保存'}
           </button>
