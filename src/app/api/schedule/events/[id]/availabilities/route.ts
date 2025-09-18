@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     }));
 
     const validTypes = ['available', 'undecided', 'online'];
-    const invalidSlots = slotsWithType.filter((s) => !validTypes.includes(s.type));
+    const invalidSlots = slotsWithType.filter((s: { type: string }) => !validTypes.includes(s.type));
     if (invalidSlots.length > 0) {
       return NextResponse.json({ message: '無効なステータスタイプが含まれています' }, { status: 400 });
     }
