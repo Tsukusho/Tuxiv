@@ -175,6 +175,9 @@ export default function Header({ isLoggedIn }: Props) {
             </Link>
             {isLoggedIn ? (
               <>
+                <Link href="/schedule/new" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                  日程調整
+                </Link>
                 <Link href="/profile" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
                   マイページ
                 </Link>

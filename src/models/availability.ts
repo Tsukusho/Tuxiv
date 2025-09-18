@@ -9,7 +9,7 @@ export interface IAvailability extends Document {
   availableSlots: {
     start: Date;
     end: Date;
-    type: 'available' | 'undecided'; 
+    type: 'available' | 'undecided' | 'online'; 
   }[];
 }
 
@@ -22,7 +22,7 @@ const AvailabilitySchema: Schema = new Schema({
   availableSlots: [{
     start: { type: Date, required: true },
     end: { type: Date, required: true },
-    type: { type: String, enum: ['available', 'undecided'], required: true, default: 'available' }, // 👈 ✨【変更】この行を追加
+    type: { type: String, enum: ['available', 'undecided', 'online'], required: true, default: 'available' },
   }],
 }, { timestamps: true });
 

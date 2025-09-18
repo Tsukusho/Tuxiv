@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { bucket } from '@/lib/gcs';
 import ArtworkActions from "@/components/ArtworkActions";
 import Comments from "@/components/Comments";
+import TagEditor from "@/components/TagEditor";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import Link from "next/link";
@@ -130,6 +131,13 @@ export default async function ArtworkDetailPage({ params }: { params: Promise<{ 
                         </Link>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* 所有者のみ: タグ編集UI */}
+                {isOwner && (
+                  <div className="mb-6">
+                    <TagEditor artworkId={artwork._id} initialTags={artwork.tags || []} />
                   </div>
                 )}
 

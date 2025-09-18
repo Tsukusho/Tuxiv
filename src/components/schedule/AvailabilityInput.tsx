@@ -17,7 +17,7 @@ interface ScheduleEventData {
 interface AvailabilitySlot {
   start: string;
   end: string;
-  type: 'available' | 'undecided';
+  type: 'available' | 'undecided' | 'online';
 }
 
 interface UserAvailability {
@@ -65,7 +65,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
   const [isProfileSaved, setIsProfileSaved] = useState(false);
 
   const [myEvents, setMyEvents] = useState<EventInput[]>([]);
-  const [inputType, setInputType] = useState<'available' | 'undecided'>('available');
+  const [inputType, setInputType] = useState<'available' | 'undecided' | 'online'>('available');
 
   // タッチイベント制御用のstate
   const [isMobile, setIsMobile] = useState(false);
@@ -148,15 +148,31 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
           setGrade(currentUserAvailability.grade);
           setRoles(currentUserAvailability.roles.join(', '));
           
-          const savedEvents = currentUserAvailability.availableSlots.map((slot: AvailabilitySlot) => ({
-            title: slot.type === 'available' ? '参加可能' : '未定',
-            start: slot.start,
-            end: slot.end,
-            backgroundColor: slot.type === 'available' ? '#1976d2' : '#ffa726',
-            borderColor: slot.type === 'available' ? '#1565c0' : '#ff9800',
-            textColor: '#ffffff',
-            extendedProps: { type: slot.type }
-          }));
+          const getEventStyle = (type: 'available' | 'undecided' | 'online') => {
+            switch (type) {
+              case 'available':
+                return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
+              case 'undecided':
+                return { title: '未定', backgroundColor: '#ffa726', borderColor: '#ff9800' };
+              case 'online':
+                return { title: 'オンライン可能', backgroundColor: '#4caf50', borderColor: '#388e3c' };
+              default:
+                return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
+            }
+          };
+
+          const savedEvents = currentUserAvailability.availableSlots.map((slot: AvailabilitySlot) => {
+            const style = getEventStyle(slot.type);
+            return {
+              title: style.title,
+              start: slot.start,
+              end: slot.end,
+              backgroundColor: style.backgroundColor,
+              borderColor: style.borderColor,
+              textColor: '#ffffff',
+              extendedProps: { type: slot.type }
+            };
+          });
           setMyEvents(savedEvents);
         }
         
@@ -184,13 +200,26 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     }
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
+    const getEventStyle = (type: 'available' | 'undecided' | 'online') => {
+      switch (type) {
+        case 'available':
+          return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
+        case 'undecided':
+          return { title: '未定', backgroundColor: '#ffa726', borderColor: '#ff9800' };
+        case 'online':
+          return { title: 'オンライン可能', backgroundColor: '#4caf50', borderColor: '#388e3c' };
+        default:
+          return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
+      }
+    };
+    const style = getEventStyle(inputType);
     const newEvent = {
       id: `${+new Date()}`,
-      title: inputType === 'available' ? '参加可能' : '未定',
+      title: style.title,
       start: selectInfo.startStr,
       end: selectInfo.endStr,
-      backgroundColor: inputType === 'available' ? '#1976d2' : '#ffa726',
-      borderColor: inputType === 'available' ? '#1565c0' : '#ff9800',
+      backgroundColor: style.backgroundColor,
+      borderColor: style.borderColor,
       textColor: '#ffffff',
       extendedProps: { type: inputType }
     };
@@ -208,7 +237,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         backgroundColor: e.backgroundColor,
         borderColor: e.borderColor,
         textColor: e.textColor,
-        extendedProps: e.extendedProps as { type?: 'available' | 'undecided' },
+        extendedProps: e.extendedProps as { type?: 'available' | 'undecided' | 'online' },
       }));
 
     if (JSON.stringify(plainEvents) !== JSON.stringify(myEvents)) {
@@ -423,6 +452,10 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         .gcal-mode-toggle.undecided {
           background: #fff3e0;
           color: #f57c00;
+        }
+        .gcal-mode-toggle.online {
+          background: #e8f5e8;
+          color: #388e3c;
         }
 
         /* メインレイアウト */
@@ -920,10 +953,10 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
             <div className="gcal-calendar-header">
               <h3 className="text-lg font-medium text-gray-900">カレンダー</h3>
               <button 
-                onClick={() => setInputType(current => current === 'available' ? 'undecided' : 'available')}
+                onClick={() => setInputType(current => current === 'available' ? 'undecided' : current === 'undecided' ? 'online' : 'available')}
                 className={`gcal-mode-toggle ${inputType}`}
               >
-                {inputType === 'available' ? '参加可能モード' : '未定モード'}
+                {inputType === 'available' ? '参加可能モード' : inputType === 'undecided' ? '未定モード' : 'オンラインモード'}
               </button>
             </div>
             
