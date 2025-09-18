@@ -143,6 +143,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     const allSlotEvents = slots.map(slot => {
       const availableMembers: string[] = [];
       const undecidedMembers: string[] = [];
+      const onlineMembers: string[] = [];
       
       for (const member of targetMembers) {
         const foundSlot = member.availableSlots.find(avail => {
@@ -154,6 +155,8 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
 
         if (foundSlot?.type === 'undecided') {
             undecidedMembers.push(member.name);
+        } else if (foundSlot?.type === 'online') {
+            onlineMembers.push(member.name);
         } else if (foundSlot) {
             availableMembers.push(member.name);
         }
@@ -173,12 +176,13 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
       return {
         start: slot.start,
         end: slot.end,
-        title: `空:${availableMembers.length} 未:${undecidedMembers.length}`,
+        title: `空:${availableMembers.length} 未:${undecidedMembers.length} オン:${onlineMembers.length}`,
         backgroundColor: color,
         borderColor: color,
         extendedProps: {
           availableNames: availableMembers,
           undecidedNames: undecidedMembers,
+          onlineNames: onlineMembers,
           unavailableNames: unavailableMembers,
         }
       };
@@ -331,7 +335,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
           displayEventTime={false}
           locale={jaLocale}
           allDaySlot={false}
-          height="70vh"
+          height="auto"
           events={filteredEvents}
           eventMouseEnter={(info) => {
             if (!calendarContainerRef.current) return;
@@ -342,11 +346,12 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
             // デバッグ用にconsole.logを残しておきます
             console.log("Hover position:", { x, y });
 
-            const { availableNames, undecidedNames, unavailableNames } = info.event.extendedProps;
+            const { availableNames, undecidedNames, onlineNames, unavailableNames } = info.event.extendedProps;
             const content = (
               <div className="text-xs">
                 <p><strong>✅ 空き ({availableNames.length}):</strong> {availableNames.join(', ') || 'なし'}</p>
                 <p><strong>⚠️ 未定 ({undecidedNames.length}):</strong> {undecidedNames.join(', ') || 'なし'}</p>
+                <p><strong>💻 オンライン ({onlineNames.length}):</strong> {onlineNames.join(', ') || 'なし'}</p>
                 <p><strong>❌ 不参加 ({unavailableNames.length}):</strong> {unavailableNames.join(', ') || 'なし'}</p>
               </div>
             );
