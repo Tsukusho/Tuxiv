@@ -15,7 +15,7 @@ interface AvailabilityData {
     availableSlots: { 
       start: string; 
       end: string; 
-      type: 'available' | 'undecided'; 
+      type: 'available' | 'undecided' | 'online'; 
     }[];
   }
 
@@ -164,7 +164,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
 
       const targetMemberNames = targetMembers.map(m => m.name);
       const unavailableMembers = targetMemberNames.filter(
-        name => !availableMembers.includes(name) && !undecidedMembers.includes(name)
+        name => !availableMembers.includes(name) && !undecidedMembers.includes(name) && !onlineMembers.includes(name)
       );
       
       const totalTargetMembers = targetMembers.length || allAvailabilities.length;
