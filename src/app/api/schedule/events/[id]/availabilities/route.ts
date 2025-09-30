@@ -17,11 +17,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const eventId = params.id;
 
     // リクエストボディからデータを取得
-    const { name, grade, roles, availableSlots } = await request.json();
+    const { name, grade, roles, availableSlots, lastInputDate } = await request.json();
 
     // 🔍 デバッグログを追加
     console.log('=== Availability API Debug ===');
     console.log('受信したavailableSlots:', JSON.stringify(availableSlots, null, 2));
+    console.log('受信したlastInputDate:', lastInputDate);
     
     // availableSlotsの各スロットにtypeフィールドが存在することを確認
     const slotsWithType = availableSlots.map((slot: { start: string; end: string; type?: string }) => ({
@@ -48,7 +49,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         name, 
         grade, 
         roles, 
-        availableSlots: slotsWithType // 処理後のデータを使用
+        availableSlots: slotsWithType, // 処理後のデータを使用
+        lastInputDate: lastInputDate ? new Date(lastInputDate) : undefined
       },
       { 
         new: true, // trueにすると、更新後のドキュメントを返す

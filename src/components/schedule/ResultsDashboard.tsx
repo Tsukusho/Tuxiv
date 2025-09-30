@@ -17,6 +17,7 @@ interface AvailabilityData {
       end: string; 
       type: 'available' | 'undecided' | 'online'; 
     }[];
+    lastInputDate?: string; // 予定入力最終日
   }
 
 interface EventData {
@@ -144,6 +145,8 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
       const availableMembers: string[] = [];
       const undecidedMembers: string[] = [];
       const onlineMembers: string[] = [];
+      const unavailableMembers: string[] = [];
+      const notInputMembers: string[] = [];
       
       for (const member of targetMembers) {
         const foundSlot = member.availableSlots.find(avail => {
@@ -159,13 +162,27 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
             onlineMembers.push(member.name);
         } else if (foundSlot) {
             availableMembers.push(member.name);
+        } else {
+          // foundSlotがない場合、lastInputDateと比較して未入力か不参加かを判定
+          const slotDate = new Date(slot.start.getFullYear(), slot.start.getMonth(), slot.start.getDate());
+          
+          if (member.lastInputDate) {
+            const lastInputDate = new Date(member.lastInputDate);
+            const lastInputDateOnly = new Date(lastInputDate.getFullYear(), lastInputDate.getMonth(), lastInputDate.getDate());
+            
+            if (slotDate > lastInputDateOnly) {
+              // 最終入力日より後の日付は「未入力」
+              notInputMembers.push(member.name);
+            } else {
+              // 最終入力日以前で予定がない場合は「不参加」
+              unavailableMembers.push(member.name);
+            }
+          } else {
+            // lastInputDateがない場合は従来通り「不参加」
+            unavailableMembers.push(member.name);
+          }
         }
       }
-
-      const targetMemberNames = targetMembers.map(m => m.name);
-      const unavailableMembers = targetMemberNames.filter(
-        name => !availableMembers.includes(name) && !undecidedMembers.includes(name) && !onlineMembers.includes(name)
-      );
       
       const totalTargetMembers = targetMembers.length || allAvailabilities.length;
       const percentage = totalTargetMembers > 0 ? (availableMembers.length / totalTargetMembers) : 0;
@@ -184,6 +201,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
           undecidedNames: undecidedMembers,
           onlineNames: onlineMembers,
           unavailableNames: unavailableMembers,
+          notInputNames: notInputMembers, // 未入力メンバーを追加
         }
       };
     });
@@ -346,13 +364,14 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
             // デバッグ用にconsole.logを残しておきます
             console.log("Hover position:", { x, y });
 
-            const { availableNames, undecidedNames, onlineNames, unavailableNames } = info.event.extendedProps;
+            const { availableNames, undecidedNames, onlineNames, unavailableNames, notInputNames } = info.event.extendedProps;
             const content = (
               <div className="text-xs">
                 <p><strong>✅ 空き ({availableNames.length}):</strong> {availableNames.join(', ') || 'なし'}</p>
                 <p><strong>⚠️ 未定 ({undecidedNames.length}):</strong> {undecidedNames.join(', ') || 'なし'}</p>
                 <p><strong>💻 オンライン ({onlineNames.length}):</strong> {onlineNames.join(', ') || 'なし'}</p>
                 <p><strong>❌ 不参加 ({unavailableNames.length}):</strong> {unavailableNames.join(', ') || 'なし'}</p>
+                <p><strong>❓ 未入力 ({notInputNames.length}):</strong> {notInputNames.join(', ') || 'なし'}</p>
               </div>
             );
             setPopoverContent({ content, x, y });
