@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -24,6 +24,7 @@ interface UserAvailability {
   grade: string;
   roles: string[];
   availableSlots: AvailabilitySlot[];
+  lastInputDate?: string;
 }
 
 interface CurrentUser {
@@ -66,6 +67,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
   const [myEvents, setMyEvents] = useState<EventInput[]>([]);
   const [inputType, setInputType] = useState<'available' | 'undecided' | 'online'>('available');
+  const [lastInputDate, setLastInputDate] = useState<string>(''); // 予定入力最終日
 
   // タッチイベント制御用のstate
   const [isMobile, setIsMobile] = useState(false);
@@ -148,6 +150,11 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
           setGrade(currentUserAvailability.grade);
           setRoles(currentUserAvailability.roles.join(', '));
           
+          // 既存のlastInputDateがあれば設定、なければ空文字列
+          if (currentUserAvailability.lastInputDate) {
+            setLastInputDate(currentUserAvailability.lastInputDate.split('T')[0]);
+          }
+          
           const getEventStyle = (type: 'available' | 'undecided' | 'online') => {
             switch (type) {
               case 'available':
@@ -226,6 +233,38 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     calendarApi.addEvent(newEvent);
   };
   
+  // 予定追加時にlastInputDateを自動更新する関数
+  const updateLastInputDate = useCallback(() => {
+    if (myEvents.length > 0) {
+      try {
+        // AvailabilitySlotから日付を取得（APIに送信する形式を使用）
+        const availableSlots = myEvents.map(e => ({ 
+          start: e.start, 
+          end: e.end, 
+          type: e.extendedProps?.type || 'available' 
+        }));
+        
+        const allDates = availableSlots.flatMap(slot => [
+          new Date(slot.start as string),
+          new Date(slot.end as string)
+        ]);
+        
+        if (allDates.length > 0) {
+          const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+          const dateStr = maxDate.toISOString().split('T')[0];
+          setLastInputDate(dateStr);
+        }
+      } catch (error) {
+        console.warn('lastInputDate自動更新でエラー:', error);
+      }
+    }
+  }, [myEvents]);
+
+  // myEventsが変更された時にlastInputDateを更新
+  useEffect(() => {
+    updateLastInputDate();
+  }, [updateLastInputDate]);
+
   const handleEventsSet = (events: EventApi[]) => {
     const plainEvents = events
       .filter((e: EventApi) => e.start && e.end) // nullをフィルタリング
@@ -267,7 +306,13 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         const response = await fetch(`/api/schedule/events/${eventId}/availabilities`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, grade, roles: roles.split(',').map(r => r.trim()), availableSlots })
+            body: JSON.stringify({ 
+              name, 
+              grade, 
+              roles: roles.split(',').map(r => r.trim()), 
+              availableSlots,
+              lastInputDate: lastInputDate // 最終日情報を追加
+            })
         });
         
         if (response.ok) {
@@ -933,6 +978,29 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
                   : 'カレンダーで参加可能な時間をドラッグして選択してください。'
                 }
               </p>
+              
+              {/* 最終日選択UI */}
+              <div className="gcal-form-group mb-4">
+                <label className="gcal-label">
+                  予定入力最終日 <span className="text-xs text-gray-500">(この日まで入力したことを記録)</span>
+                </label>
+                <input 
+                  type="date" 
+                  value={lastInputDate} 
+                  onChange={e => setLastInputDate(e.target.value)}
+                  className="gcal-input"
+                  style={{ 
+                    fontSize: '16px', // モバイル対応
+                    background: '#f8f9fa',
+                    border: '2px solid #e8eaed',
+                    borderRadius: '8px',
+                    padding: '12px 16px'
+                  }}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  予定を入力した最後の日付を選択してください。この日以降は「未入力」として結果に表示されます。
+                </p>
+              </div>
               
               <button 
                 onClick={handleAvailabilitySubmit} 

@@ -11,6 +11,7 @@ export interface IAvailability extends Document {
     end: Date;
     type: 'available' | 'undecided' | 'online'; 
   }[];
+  lastInputDate?: Date; // 予定入力の最終日情報
 }
 
 const AvailabilitySchema: Schema = new Schema({
@@ -24,6 +25,7 @@ const AvailabilitySchema: Schema = new Schema({
     end: { type: Date, required: true },
     type: { type: String, enum: ['available', 'undecided', 'online'], required: true, default: 'available' },
   }],
+  lastInputDate: { type: Date }, // 予定入力の最終日情報
 }, { timestamps: true });
 
 const Availability: Model<IAvailability> = models.Availability || mongoose.model<IAvailability>('Availability', AvailabilitySchema);
