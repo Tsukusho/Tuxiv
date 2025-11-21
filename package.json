@@ -6,8 +6,7 @@
     "dev": "NODE_OPTIONS='--openssl-legacy-provider' next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "migrate:roles": "ts-node scripts/migrate-normalize-roles.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.19",
