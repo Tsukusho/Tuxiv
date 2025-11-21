@@ -15,7 +15,7 @@ export interface IAvailability extends Document {
 }
 
 const AvailabilitySchema: Schema = new Schema({
-  eventId: { type: Schema.Types.ObjectId, ref: 'ScheduleEvent', required: true },
+  eventId: { type: Schema.Types.ObjectId, ref: 'ScheduleEvent', required: true, index: true },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   grade: { type: String, required: true },
@@ -27,6 +27,9 @@ const AvailabilitySchema: Schema = new Schema({
   }],
   lastInputDate: { type: Date }, // 予定入力の最終日情報
 }, { timestamps: true });
+
+// 複合インデックス: eventIdとuserIdの組み合わせで高速検索
+AvailabilitySchema.index({ eventId: 1, userId: 1 });
 
 const Availability: Model<IAvailability> = models.Availability || mongoose.model<IAvailability>('Availability', AvailabilitySchema);
 

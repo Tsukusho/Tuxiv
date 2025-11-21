@@ -104,7 +104,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
 
   const filteredEvents = useMemo((): EventInput[] => {
     if (!eventData) return [];
-    
+
     // allAvailabilitiesが配列でない場合の安全な処理
     if (!Array.isArray(allAvailabilities)) {
       return [];
@@ -119,21 +119,21 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     if (targetMembers.length === 0 && (draftSelectedRoles.length > 0 || draftSelectedGrades.length > 0 || draftSelectedNames.length > 0)) {
         return [];
     }
-    
+
     // availabilitiesデータから実際の日時範囲を取得
     const allSlots = targetMembers.flatMap(member => member.availableSlots);
-    
+
     if (allSlots.length === 0) {
         return []; // availableSlotsがない場合は空を返す
     }
-    
+
     // 最小・最大日時を取得
     const allDates = allSlots.flatMap(slot => [new Date(slot.start), new Date(slot.end)]);
     const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-    
+
     // 30分刻みでスロットを生成
-    const slots = [];
+    const slots: { start: Date; end: Date }[] = [];
     let current = new Date(minDate);
     while (current < maxDate) {
         const next = new Date(current.getTime() + 30 * 60 * 1000);
@@ -141,54 +141,98 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
         current = next;
     }
 
+    // 🚀 パフォーマンス最適化: スロットキーごとにメンバー情報を事前計算
+    // O(n³) から O(n) に削減
+    const slotKey = (date: Date) => Math.floor(date.getTime() / (30 * 60 * 1000));
+
+    // スロットごとのメンバー分類マップを構築
+    interface SlotMembers {
+      available: Set<string>;
+      undecided: Set<string>;
+      online: Set<string>;
+    }
+
+    const slotMemberMap = new Map<number, SlotMembers>();
+
+    // 各メンバーのスロットを一度だけ処理
+    for (const member of targetMembers) {
+      for (const avail of member.availableSlots) {
+        const availStart = new Date(avail.start);
+        const availEnd = new Date(avail.end);
+
+        // このスロットが影響する30分単位のキーを全て取得
+        let slotTime = new Date(availStart);
+        const endTime = availEnd;
+
+        while (slotTime < endTime) {
+          const key = slotKey(slotTime);
+
+          if (!slotMemberMap.has(key)) {
+            slotMemberMap.set(key, {
+              available: new Set(),
+              undecided: new Set(),
+              online: new Set(),
+            });
+          }
+
+          const slotMembers = slotMemberMap.get(key)!;
+
+          if (avail.type === 'undecided') {
+            slotMembers.undecided.add(member.name);
+          } else if (avail.type === 'online') {
+            slotMembers.online.add(member.name);
+          } else {
+            slotMembers.available.add(member.name);
+          }
+
+          slotTime = new Date(slotTime.getTime() + 30 * 60 * 1000);
+        }
+      }
+    }
+
+    // 各スロットのイベントを生成（最適化されたルックアップ）
     const allSlotEvents = slots.map(slot => {
-      const availableMembers: string[] = [];
-      const undecidedMembers: string[] = [];
-      const onlineMembers: string[] = [];
+      const key = slotKey(slot.start);
+      const slotMembers = slotMemberMap.get(key);
+
+      const availableMembers = slotMembers ? Array.from(slotMembers.available) : [];
+      const undecidedMembers = slotMembers ? Array.from(slotMembers.undecided) : [];
+      const onlineMembers = slotMembers ? Array.from(slotMembers.online) : [];
+
+      // 出席情報があるメンバーのSet
+      const attendingMembers = new Set([
+        ...availableMembers,
+        ...undecidedMembers,
+        ...onlineMembers
+      ]);
+
       const unavailableMembers: string[] = [];
       const notInputMembers: string[] = [];
-      
-      for (const member of targetMembers) {
-        const foundSlot = member.availableSlots.find(avail => {
-          const availStart = new Date(avail.start);
-          const availEnd = new Date(avail.end);
-          // 時間の重複チェック: スロットが重複している場合に一致とする
-          return availStart < slot.end && availEnd > slot.start;
-        });
 
-        if (foundSlot?.type === 'undecided') {
-            undecidedMembers.push(member.name);
-        } else if (foundSlot?.type === 'online') {
-            onlineMembers.push(member.name);
-        } else if (foundSlot) {
-            availableMembers.push(member.name);
-        } else {
-          // foundSlotがない場合、lastInputDateと比較して未入力か不参加かを判定
-          const slotDate = new Date(slot.start.getFullYear(), slot.start.getMonth(), slot.start.getDate());
-          
+      // 不参加・未入力メンバーを判定
+      const slotDate = new Date(slot.start.getFullYear(), slot.start.getMonth(), slot.start.getDate());
+
+      for (const member of targetMembers) {
+        if (!attendingMembers.has(member.name)) {
           if (member.lastInputDate) {
             const lastInputDate = new Date(member.lastInputDate);
             const lastInputDateOnly = new Date(lastInputDate.getFullYear(), lastInputDate.getMonth(), lastInputDate.getDate());
-            
+
             if (slotDate > lastInputDateOnly) {
-              // 最終入力日より後の日付は「未入力」
               notInputMembers.push(member.name);
             } else {
-              // 最終入力日以前で予定がない場合は「不参加」
               unavailableMembers.push(member.name);
             }
           } else {
-            // lastInputDateがない場合は従来通り「不参加」
             unavailableMembers.push(member.name);
           }
         }
       }
-      
+
       const totalTargetMembers = targetMembers.length || allAvailabilities.length;
       const percentage = totalTargetMembers > 0 ? (availableMembers.length / totalTargetMembers) : 0;
       const green = Math.min(255, Math.round(180 * percentage));
       const color = `rgb(80, ${green + 75}, 150)`;
-
 
       return {
         start: slot.start,
@@ -201,7 +245,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
           undecidedNames: undecidedMembers,
           onlineNames: onlineMembers,
           unavailableNames: unavailableMembers,
-          notInputNames: notInputMembers, // 未入力メンバーを追加
+          notInputNames: notInputMembers,
         }
       };
     });
