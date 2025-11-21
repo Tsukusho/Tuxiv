@@ -259,7 +259,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     if (!Array.isArray(allAvailabilities)) {
       return [];
     }
-    return [...new Set(allAvailabilities.flatMap(a => a.roles))];
+    return [...new Set(allAvailabilities.flatMap(a => a.roles))].sort((a, b) => a.localeCompare(b, 'ja'));
   }, [allAvailabilities]);
   
   const allGrades = useMemo(() => {
@@ -273,7 +273,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
     if (!Array.isArray(allAvailabilities)) {
       return [];
     }
-    return [...new Set(allAvailabilities.map(a => a.name))].sort();
+    return [...new Set(allAvailabilities.map(a => a.name))].sort((a, b) => a.localeCompare(b, 'ja'));
   }, [allAvailabilities]);
 
   const handleApplyFilters = () => {
