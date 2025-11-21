@@ -6,6 +6,8 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { EventInput } from '@fullcalendar/core';
 import jaLocale from '@fullcalendar/core/locales/ja';
 
+// TODO: この関数のリファクタとデータの取得範囲についての再考
+
 // APIから受け取るデータの型定義
 interface AvailabilityData {
     _id: string;
