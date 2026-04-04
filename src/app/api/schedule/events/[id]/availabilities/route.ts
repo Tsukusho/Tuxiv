@@ -19,11 +19,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     // リクエストボディからデータを取得
     const { name, grade, roles, availableSlots, lastInputDate } = await request.json();
 
-    // 🔍 デバッグログを追加
-    console.log('=== Availability API Debug ===');
-    console.log('受信したavailableSlots:', JSON.stringify(availableSlots, null, 2));
-    console.log('受信したlastInputDate:', lastInputDate);
-    
     // availableSlotsの各スロットにtypeフィールドが存在することを確認
     const slotsWithType = availableSlots.map((slot: { start: string; end: string; type?: string }) => ({
       start: slot.start,
@@ -37,8 +32,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ message: '無効なステータスタイプが含まれています' }, { status: 400 });
     }
     
-    console.log('保存用に処理したavailableSlots:', JSON.stringify(slotsWithType, null, 2));
-
     // "Upsert"処理: データがあれば更新、なければ新規作成
     const updatedAvailability = await Availability.findOneAndUpdate(
       { 
@@ -57,9 +50,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         upsert: true // trueにすると、データが見つからない場合に新規作成する
       }
     );
-
-    console.log('保存後のavailableSlots:', JSON.stringify(updatedAvailability.availableSlots, null, 2));
-    console.log('=== Debug終了 ===');
 
     return NextResponse.json(updatedAvailability, { status: 200 });
 

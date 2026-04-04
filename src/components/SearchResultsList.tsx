@@ -38,7 +38,7 @@ export default async function SearchResultsList({ tags }: Props) {
             showNSFW = user.showNSFW || false;
           }
         } catch {
-          console.log("Invalid token, proceeding as guest.");
+          // token無効時はゲストとして続行
         }
       }
       

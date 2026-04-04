@@ -80,7 +80,7 @@ export default async function ArtworkDetailPage({ params }: { params: Promise<{ 
     }
 
   } catch (error) {
-    console.log("Token verification failed, user is not logged in.");
+    // token無効時は未ログインとして続行
   }
   
   const isOwner = artwork?.userId?._id === loggedInUserId;

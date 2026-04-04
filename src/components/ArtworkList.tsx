@@ -39,7 +39,7 @@ export default async function ArtworkList() {
           query.isNSFW = false;
         }
       } catch (e) {
-        console.log("Invalid token, proceeding as guest.");
+        // token無効時はゲストとして続行
         query.isNSFW = false;
       }
     } else {

@@ -10,6 +10,9 @@
 - **認証**: JWT + bcrypt
 - **ストレージ**: Google Cloud Storage
 - **カレンダー**: FullCalendar
+- **デプロイ**: Vercel（手動デプロイ、CI/CD なし）
+
+> **Note**: Vercel の設定上、`staging` ブランチが本番ブランチとして運用されています。`master` ブランチは使用していません。
 
 ## 主な機能
 

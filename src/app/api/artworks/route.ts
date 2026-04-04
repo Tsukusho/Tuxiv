@@ -14,7 +14,6 @@ import { cookies } from 'next/headers';
 export async function POST(req: Request) {
   const JWT_SECRET = process.env.JWT_SECRET!;
   await dbConnect();
-  console.log('dbConnect done');
 
   try {
     const cookieStore = await cookies();

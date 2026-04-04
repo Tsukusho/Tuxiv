@@ -6,7 +6,9 @@
     "dev": "NODE_OPTIONS='--openssl-legacy-provider' next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "biome check ./src",
+    "lint:fix": "biome check --fix ./src",
+    "format": "biome format --write ./src"
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^6.1.19",
@@ -26,15 +28,13 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
+    "@biomejs/biome": "2.4.10",
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-big-calendar": "^1.16.2",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "^16.0.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
