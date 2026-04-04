@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tuxiv
 
-## Getting Started
+サークル・チーム向けの SNS + 日程調整ツール。
 
-First, run the development server:
+
+## 技術スタック
+
+- **Frontend**: Next.js 15 / React 19 / Tailwind CSS
+- **Backend**: Next.js API Routes / MongoDB (Mongoose)
+- **認証**: JWT + bcrypt
+- **ストレージ**: Google Cloud Storage
+- **カレンダー**: FullCalendar
+
+## 主な機能
+
+- 作品の投稿・閲覧・検索（タグ、NSFW フィルタリング）
+- いいね・ブックマーク・コメント
+- フォロー / タイムライン（グローバル / フォロー中）
+- ユーザープロフィール
+- 日程調整（候補日時の投票）
+
+## セットアップ
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`http://localhost:3000` で起動します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 環境変数
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`.env.local` を作成し、以下を設定してください:
 
-## Learn More
+- `MONGODB_URI` - MongoDB 接続文字列
+- `JWT_SECRET` - JWT 署名キー
+- `GCS_BUCKET_NAME` - GCS バケット名
+- `GCS_PROJECT_ID` - GCP プロジェクト ID
 
-To learn more about Next.js, take a look at the following resources:
+## ディレクトリ構成
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/          # ページ・API ルート
+├── components/   # UI コンポーネント
+├── lib/          # DB接続等のユーティリティ
+├── models/       # Mongoose モデル
+└── middleware.ts  # 認証ミドルウェア
+migrations/       # DBマイグレーションスクリプト
+```
