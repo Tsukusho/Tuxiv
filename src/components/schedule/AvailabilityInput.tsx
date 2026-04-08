@@ -1,5 +1,8 @@
 'use client';
 
+// TODO: AvailabilityInputのリファクタ
+// API、フォーム、カレンダーをそれぞれhook化,モバイル制御をutilsに切り出し
+
 import { useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -297,11 +300,6 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         type: e.extendedProps?.type || 'available' 
     }));
 
-    console.log('=== フロントエンド送信データ ===');
-    console.log('myEvents:', myEvents);
-    console.log('送信するavailableSlots:', availableSlots);
-    console.log('================================');
-
     try {
         // 🔧 全角・半角カンマ両対応: 表記揺れを防止
         const normalizedRoles = roles
@@ -323,8 +321,6 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         });
         
         if (response.ok) {
-            const result = await response.json();
-            console.log('API応答:', result);
             alert('予定を登録・更新しました！');
         } else {
             throw new Error('API応答エラー');

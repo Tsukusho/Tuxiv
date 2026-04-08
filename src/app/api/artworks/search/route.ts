@@ -38,7 +38,7 @@ export async function GET(req: Request) {
           showNSFW = user.showNSFW || false;
         }
       } catch (e) {
-        console.log("Invalid token, proceeding as guest.");
+        // token無効時はゲストとして続行
       }
     }
 

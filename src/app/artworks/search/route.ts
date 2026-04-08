@@ -38,7 +38,7 @@ export async function GET(req: Request) {
           showNSFW = user.showNSFW || false;
         }
       } catch (e) {
-        console.log("Invalid token, proceeding as guest.");
+        // token無効時はゲストとして続行
       }
     }
 
@@ -50,8 +50,6 @@ export async function GET(req: Request) {
     if (!showNSFW) {
       query.isNSFW = false;
     }
-
-    console.log(query);
 
     const artworks = await Artwork.find(query)
       .sort({ createdAt: -1 })

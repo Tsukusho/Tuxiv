@@ -43,13 +43,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 一時的なパスワードリセット用の特別処理
-    let isPasswordMatch = false;
-    if (user.hashedPassword === "1" && password === "temp123") {
-      isPasswordMatch = true; // 一時的にログイン許可
-    } else {
-      isPasswordMatch = await bcrypt.compare(password, user.hashedPassword);
-    }
+    const isPasswordMatch = await bcrypt.compare(password, user.hashedPassword);
     
     if (!isPasswordMatch) {
       return NextResponse.json(

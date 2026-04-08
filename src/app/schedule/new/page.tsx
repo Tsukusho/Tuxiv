@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-//NOTE:このページで唯一のイベントIDをここで定義しています　ハードコーディングダメ絶対ですがサークルのテスト用なので
-//todo:必ず将来的にはイベントIDを複数設けます
-const SINGLE_EVENT_ID = "68a1861f489482534ae40977"; // ここにMongoDBの実際のイベントIDを入れてください
+// TODO: ハードコードを廃止し、APIから現在のイベントを取得する形に変更する
+// 元々マルチイベント調整カレンダー機能だったが、マスター１つだけに仕様変更したため今の形になってしまっている形になってしまっている
+const SINGLE_EVENT_ID = "68a1861f489482534ae40977";
 
 export default function ScheduleHomePage() {
   const router = useRouter();

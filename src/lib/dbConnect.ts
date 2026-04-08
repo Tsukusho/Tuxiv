@@ -2,7 +2,6 @@ import mongoose, { Mongoose } from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-console.log('DATABASE_URI:', process.env.MONGODB_URI); // ← この行を追加！
 // グローバルオブジェクトの型を拡張
 declare global {
   var mongoose: {

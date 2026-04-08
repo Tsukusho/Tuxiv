@@ -407,9 +407,6 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
             const x = info.jsEvent.clientX - containerRect.left;
             const y = info.jsEvent.clientY - containerRect.top;
             
-            // デバッグ用にconsole.logを残しておきます
-            console.log("Hover position:", { x, y });
-
             const { availableNames, undecidedNames, onlineNames, unavailableNames, notInputNames } = info.event.extendedProps;
             const content = (
               <div className="text-xs">

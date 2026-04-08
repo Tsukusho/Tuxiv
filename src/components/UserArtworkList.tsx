@@ -40,7 +40,7 @@ export default async function UserArtworkList({ username }: Props) {
             showNSFW = viewer.showNSFW || false;
           }
         } catch {
-          console.log("Invalid token, proceeding as guest.");
+          // token無効時はゲストとして続行
         }
       }
 
