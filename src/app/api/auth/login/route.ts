@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { identifier, password, sharedPassword } = await req.json();
+    const { identifier, password } = await req.json();
 
     if (!identifier || !password) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     }
     
     const user = await User.findOne({
-      $or: [{ username: identifier }, { fullName: identifier }],
+      $or: [{ username: identifier }, { fullName: identifier }, { studentId: identifier }],
     });
     if (!user) {
       return NextResponse.json(

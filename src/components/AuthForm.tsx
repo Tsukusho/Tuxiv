@@ -7,10 +7,14 @@ type Props = {
   isRegister: boolean;
 };
 
+// TODO: isRegister切り替えではなく、componentを分けて切り出す
+// TODO: 青リンクをbase componentとして切り出す
+// TODO: フォームUIが重複している箇所が多いので切り出す
 export default function AuthForm({ isRegister }: Props) {
   const [identifier, setIdentifier] = useState(''); // ログイン時のユーザー名 or 本名
   const [username, setUsername] = useState(''); // 登録時のユーザー名
   const [fullName, setFullName] = useState(''); // 登録時の本名
+  const [studentId, setStudentId] = useState(''); // 登録時の学籍番号
   const [password, setPassword] = useState('');
   const [sharedPassword, setSharedPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,8 +27,8 @@ export default function AuthForm({ isRegister }: Props) {
     const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
     
     const body = isRegister
-      ? { username, fullName, password, sharedPassword }
-      : { identifier, password, sharedPassword };  
+      ? { username, fullName, studentId, password, sharedPassword }
+      : { identifier, password };
 
     try {
           const res = await fetch(endpoint, {
@@ -92,24 +96,41 @@ export default function AuthForm({ isRegister }: Props) {
                   <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
                     本名 <span className="text-red-500">*</span>
                   </label>
-                  <input 
+                  <input
                     id="fullName"
-                    type="text" 
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)} 
-                    required 
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
                     className="input-field w-full"
                     placeholder="本名を入力してください"
                   />
+                </div>
+                <div>
+                  <label htmlFor="studentId" className="block text-sm font-semibold text-gray-700 mb-2">
+                    学籍番号 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="studentId"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d{9}"
+                    maxLength={9}
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ''))}
+                    required
+                    className="input-field w-full"
+                    placeholder="例: 202312345"
+                  />
                   <p className="text-xs text-gray-500 mt-1">
-                    ログイン時の識別にも使用されます
+                    s以降の20**~から始まる9桁の数字を入力してください。ログイン時に使用します。
                   </p>
                 </div>
               </>
             ) : (
               <div>
                 <label htmlFor="identifier" className="block text-sm font-semibold text-gray-700 mb-2">
-                  ユーザー名または本名 <span className="text-red-500">*</span>
+                  ユーザー名,本名,学籍番号のうちどれか <span className="text-red-500">*</span>
                 </label>
                 <input 
                   id="identifier"
@@ -118,7 +139,7 @@ export default function AuthForm({ isRegister }: Props) {
                   onChange={(e) => setIdentifier(e.target.value)} 
                   required 
                   className="input-field w-full"
-                  placeholder="ユーザー名または本名"
+                  placeholder="ユーザー名,本名,学籍番号のうちどれか"
                 />
               </div>
             )}
@@ -138,23 +159,25 @@ export default function AuthForm({ isRegister }: Props) {
               />
             </div>
 
-            <div>
-              <label htmlFor="sharedPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-                共有パスワード <span className="text-red-500">*</span>
-              </label>
-              <input 
-                id="sharedPassword"
-                type="password" 
-                value={sharedPassword} 
-                onChange={(e) => setSharedPassword(e.target.value)} 
-                required 
-                className="input-field w-full"
-                placeholder="共有パスワードを入力してください"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                サービス利用のための共有パスワードです
-              </p>
-            </div>
+            {isRegister && (
+              <div>
+                <label htmlFor="sharedPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                  共有パスワード <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="sharedPassword"
+                  type="password"
+                  value={sharedPassword}
+                  onChange={(e) => setSharedPassword(e.target.value)}
+                  required
+                  className="input-field w-full"
+                  placeholder="共有パスワードを入力してください"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  サービス利用のための共有パスワードです
+                </p>
+              </div>
+            )}
 
             {error && (
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -179,6 +202,19 @@ export default function AuthForm({ isRegister }: Props) {
               >
                 {isRegister ? 'ログイン' : '新規登録'}
               </a>
+            </p>
+            
+            <p className="text-sm text-gray-600 mt-4">
+              パスワードを忘れた場合は
+              <a
+                href="https://discord.com/users/1099882769494048828"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"
+              >
+                作成者
+              </a>
+              またはWeb管まで
             </p>
           </div>
         </div>

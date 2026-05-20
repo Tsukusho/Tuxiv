@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function SettingsPage() {
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
   const [mutedTags, setMutedTags] = useState('');
   const [message, setMessage] = useState('');
@@ -13,7 +14,8 @@ export default function SettingsPage() {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const router = useRouter();
-
+  
+  // TODO: ReactQueryにする
   useEffect(() => {
     const fetchUserData = async () => {
       const res = await fetch('/api/users/me', {
@@ -23,6 +25,7 @@ export default function SettingsPage() {
         const data = await res.json();
         setUsername(data.username);
         setFullName(data.fullName);
+        setStudentId(data.studentId ?? '');
         setMutedTags(data.mutedTags.join(', '));
         setShowNSFW(data.showNSFW);
         setProfileImageUrl(data.profileImageUrl);
@@ -54,6 +57,25 @@ export default function SettingsPage() {
     if (res.ok) {
       setMessage(`${field}を更新しました。`);
       if(field === 'password') setPassword('');
+    } else {
+      const data = await res.json();
+      setMessage(`エラー: ${data.error}`);
+    }
+  };
+
+  const handleStudentIdUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage('');
+
+    const res = await fetch('/api/profile/me/studentId', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId }),
+      credentials: 'include',
+    });
+
+    if (res.ok) {
+      setMessage('学籍番号を更新しました。');
     } else {
       const data = await res.json();
       setMessage(`エラー: ${data.error}`);
@@ -220,6 +242,25 @@ export default function SettingsPage() {
           <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full px-3 py-2 border rounded-md mb-2" />
           <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">更新</button>
         </form>*/}
+
+        <form onSubmit={handleStudentIdUpdate}>
+          <h2 className="text-xl font-semibold mb-2">学籍番号</h2>
+          <p className="text-sm text-gray-500 mb-2">
+            s以降の20**~から始まる9桁の数字を入力してください。ログイン時に使用します。
+          </p>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="\d{9}"
+            maxLength={9}
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ''))}
+            required
+            placeholder="ex:202312345"
+            className="w-full px-3 py-2 border rounded-md mb-2"
+          />
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">更新</button>
+        </form>
 
         <form onSubmit={(e) => handleUpdate(e, 'password')}>
           <h2 className="text-xl font-semibold mb-2">パスワード変更</h2>

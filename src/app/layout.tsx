@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import StudentIdGate from "@/components/StudentIdGate";
+import QueryProvider from "@/components/QueryProvider";
 import { cookies } from 'next/headers';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -12,6 +14,7 @@ export const metadata: Metadata = {
   description: "An image posting application",
 };
 
+// Note: StudentIdGateは一時的なものなのでlayoutに追加。不要になり次第削除
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -24,8 +27,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Header isLoggedIn={isLoggedIn} />
-        {children}
+        <QueryProvider>
+          <Header isLoggedIn={isLoggedIn} />
+          <StudentIdGate isLoggedIn={isLoggedIn} />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

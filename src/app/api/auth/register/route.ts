@@ -23,12 +23,19 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const { username, fullName, password, sharedPassword } = await req.json();
+    const { username, fullName, studentId, password, sharedPassword } = await req.json();
 
     // 必須項目のチェック
-    if (!username || !fullName || !password) {
+    if (!username || !fullName || !studentId || !password) {
       return NextResponse.json(
-        { error: 'ユーザー名、本名、パスワードは全て必須です。' },
+        { error: 'ユーザー名、本名、学籍番号、パスワードは全て必須です。' },
+        { status: 400 }
+      );
+    }
+
+    if (!/^\d{9}$/.test(studentId)) {
+      return NextResponse.json(
+        { error: '学籍番号は9桁の数字で入力してください。' },
         { status: 400 }
       );
     }
@@ -78,11 +85,21 @@ export async function POST(req: Request) {
       );
     }
 
+    // 学籍番号の重複チェック
+    const existingStudentId = await User.findOne({ studentId });
+    if (existingStudentId) {
+      return NextResponse.json(
+        { error: 'この学籍番号は既に使用されています。' },
+        { status: 409 }
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     const newUser = await User.create({
       username: username.trim(),
       fullName: fullName.trim(),
+      studentId,
       hashedPassword,
     });
     
