@@ -4,6 +4,7 @@ export interface IUserData {
   _id: string;
   username: string;
   fullName: string;
+  studentId?: string;
   mutedTags?: string[];
   showNSFW?: boolean;
   profileImage?: {
@@ -17,6 +18,7 @@ export interface IUserData {
 export interface IUser extends Document {
   username: string;
   fullName: string;
+  studentId?: string;
   hashedPassword: string;
   mutedTags?: string[];
   showNSFW?: boolean;
@@ -39,6 +41,12 @@ const UserSchema: Schema = new Schema({
     type: String,
     required: [true, '本名（漢字）を入力してください。'],
     unique: true,
+  },
+  studentId: {
+    type: String,
+    match: /^\d{9}$/,
+    unique: true,
+    sparse: true,
   },
   hashedPassword: {
     type: String,
