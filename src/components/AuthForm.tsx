@@ -7,8 +7,9 @@ type Props = {
   isRegister: boolean;
 };
 
-// TODO:isRegister切り替えではなく、componentを分けて切り出す
-// TODO:青リンクをbase componentとして切り出す　
+// TODO: isRegister切り替えではなく、componentを分けて切り出す
+// TODO: 青リンクをbase componentとして切り出す
+// TODO: フォームUIが重複している箇所が多いので切り出す
 export default function AuthForm({ isRegister }: Props) {
   const [identifier, setIdentifier] = useState(''); // ログイン時のユーザー名 or 本名
   const [username, setUsername] = useState(''); // 登録時のユーザー名
