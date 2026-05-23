@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import dbConnect from "@/lib/dbConnect";
+import { env } from "@/lib/env";
 import User from "@/models/user";
 
 const loginSchema = z.object({
@@ -23,15 +24,6 @@ const loginSchema = z.object({
  * @returns {NextResponse} 成功時はユーザー情報とトークン、失敗時はエラーメッセージを返す
  */
 export async function POST(req: Request) {
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    console.error("JWT_SECRET is not defined in .env.local");
-    return NextResponse.json(
-      { error: "サーバー設定エラーです。" },
-      { status: 500 },
-    );
-  }
-
   try {
     const body = await req.json().catch(() => null);
 
@@ -80,7 +72,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const token = jwt.sign({ id: user._id.toString() }, JWT_SECRET);
+    const token = jwt.sign({ id: user._id.toString() }, env.JWT_SECRET);
 
     const cookie = serialize("token", token, {
       httpOnly: true,
