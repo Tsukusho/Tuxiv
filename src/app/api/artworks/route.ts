@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 /**
  * 新しい作品を投稿するAPI
@@ -12,20 +11,15 @@ import { cookies } from 'next/headers';
  * @returns {NextResponse} 作成された作品情報またはエラーメッセージ
  */
 export async function POST(req: Request) {
-  const JWT_SECRET = process.env.JWT_SECRET!;
   await dbConnect();
 
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
     }
@@ -76,10 +70,6 @@ export async function POST(req: Request) {
 
   } catch (error: unknown) {
     console.error('Artwork creation failed:', error);
-    
-    if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError')) {
-      return NextResponse.json({ error: '認証が無効です。' }, { status: 401 });
-    }
 
     // NOTE: ここにGCSのロールバック処理を追加することも可能
 

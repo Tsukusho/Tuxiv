@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function PATCH(
   req: Request,
@@ -12,18 +11,9 @@ export async function PATCH(
     await dbConnect();
     const { id } = await context.params;
 
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-    if (!token) {
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
       return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
-    }
-
-    let userId: string;
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-      userId = decoded.id;
-    } catch {
-      return NextResponse.json({ error: '認証が無効です。' }, { status: 401 });
     }
 
     const body = await req.json();

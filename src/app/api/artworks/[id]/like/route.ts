@@ -4,24 +4,18 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import Like from '@/models/like';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 /**
  * ユーザーが特定の作品をいいね済みか確認するAPI
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET!;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
       return NextResponse.json({ isLiked: false });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    const userId = decoded.id;
     const { id: artworkId } = await params;
 
     await dbConnect();
@@ -39,16 +33,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET!;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    const userId = decoded.id;
     const { id: artworkId } = await params;
 
     await dbConnect();
@@ -56,7 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (existingLike) {
       return NextResponse.json({ error: '既にいいね済みです。' }, { status: 409 });
     }
-    
+
     await Like.create({ userId, artworkId });
     await Artwork.updateOne({ _id: artworkId }, { $inc: { likeCount: 1 } });
 
@@ -76,30 +65,25 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const JWT_SECRET = process.env.JWT_SECRET!;
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value;
-    
-        if (!token) {
-          return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+        const userId = await getAuthenticatedUserId();
+        if (!userId) {
+          return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
         }
-    
-        const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-        const userId = decoded.id;
-          const { id } = await context.params;
-          const artworkId = id;
-    
+
+        const { id } = await context.params;
+        const artworkId = id;
+
         await dbConnect();
-    
+
         const result = await Like.deleteOne({ userId, artworkId });
         if (result.deletedCount === 0) {
             return NextResponse.json({ error: 'いいねされていません。' }, { status: 404 });
         }
 
         await Artwork.updateOne({ _id: artworkId }, { $inc: { likeCount: -1 } });
-    
+
         return NextResponse.json({ message: 'いいねを解除しました。' });
-    
+
       } catch (error) {
         console.error(error);
         return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });

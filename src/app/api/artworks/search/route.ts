@@ -3,13 +3,12 @@ import dbConnect from '@/lib/dbConnect';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import { bucket } from '@/lib/gcs';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    
+
     const { searchParams } = new URL(req.url);
     const tagsQuery = searchParams.get('tags');
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -25,20 +24,13 @@ export async function GET(req: Request) {
     // ユーザー設定を取得
     let mutedTags: string[] = [];
     let showNSFW = false;
-    
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-    
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-        const user = await User.findById(decoded.id).select('mutedTags showNSFW');
-        if (user) {
-          mutedTags = user.mutedTags || [];
-          showNSFW = user.showNSFW || false;
-        }
-      } catch (e) {
-        // token無効時はゲストとして続行
+
+    const userId = await getAuthenticatedUserId();
+    if (userId) {
+      const user = await User.findById(userId).select('mutedTags showNSFW');
+      if (user) {
+        mutedTags = user.mutedTags || [];
+        showNSFW = user.showNSFW || false;
       }
     }
 

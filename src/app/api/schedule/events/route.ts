@@ -1,21 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import ScheduleEvent from '@/models/scheduleEvent';
 import User from '@/models/user'; // Tuxivの既存Userモデル
-import jwt from 'jsonwebtoken';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    // 1. 認証チェック (Tuxivの既存の仕組みを流用)
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
-      return NextResponse.json({ message: '認証されていません' }, { status: 401 });
+    // 1. 認証チェック
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    if (!decoded.id) {
-        return NextResponse.json({ message: '無効なトークンです' }, { status: 401 });
-    }
-    
+
     // 2. データベース接続
     await dbConnect();
 
@@ -32,7 +28,7 @@ export async function POST(request: NextRequest) {
       title,
       description,
       candidateDates,
-      createdBy: decoded.id, // ログイン中のユーザーIDを関連付け
+      createdBy: userId, // ログイン中のユーザーIDを関連付け
     });
 
     await newEvent.save();
@@ -41,9 +37,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('イベント作成エラー:', error);
-    if (error instanceof jwt.JsonWebTokenError) {
-        return NextResponse.json({ message: '認証トークンが無効です' }, { status: 401 });
-    }
     return NextResponse.json({ message: 'サーバーエラーが発生しました' }, { status: 500 });
   }
 }

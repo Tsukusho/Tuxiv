@@ -4,8 +4,7 @@ import dbConnect from '@/lib/dbConnect';
 import Comment from '@/models/comment';
 import Artwork from '@/models/artwork';
 import User from '@/models/user';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 import { bucket } from '@/lib/gcs';
 /**
  * 作品のコメント一覧を取得するAPI
@@ -63,16 +62,11 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
     try {
-      const JWT_SECRET = process.env.JWT_SECRET!;
-      const cookieStore = await cookies();
-      const token = cookieStore.get('token')?.value;
-      
-      if (!token) {
-        return NextResponse.json({ error: 'ログインが必要です。' }, { status: 401 });
+      const userId = await getAuthenticatedUserId();
+      if (!userId) {
+        return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
       }
-  
-      const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-      const userId = decoded.id;
+
       const { id } = await context.params;
       const artworkId = id;
       const { text } = await req.json();

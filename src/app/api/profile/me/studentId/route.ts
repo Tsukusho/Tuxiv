@@ -1,40 +1,52 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/user';
-import jwt from 'jsonwebtoken';
+import { NextResponse } from "next/server";
+import { getAuthenticatedUserId } from "@/lib/auth";
+import dbConnect from "@/lib/dbConnect";
+import User from "@/models/user";
 
 export async function PATCH(req: Request) {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET!;
-    const token = (await cookies()).get('token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "認証が必要です。" }, { status: 401 });
     }
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    const userId = decoded.id;
 
     const { studentId } = await req.json();
 
     if (!studentId || !/^\d{9}$/.test(studentId)) {
-      return NextResponse.json({ error: '学籍番号は9桁の数字で入力してください。' }, { status: 400 });
+      return NextResponse.json(
+        { error: "学籍番号は9桁の数字で入力してください。" },
+        { status: 400 },
+      );
     }
 
     await dbConnect();
 
     const existing = await User.findOne({ studentId, _id: { $ne: userId } });
     if (existing) {
-      return NextResponse.json({ error: 'この学籍番号は既に使用されています。' }, { status: 409 });
+      return NextResponse.json(
+        { error: "この学籍番号は既に使用されています。" },
+        { status: 409 },
+      );
     }
 
-    const updated = await User.findByIdAndUpdate(userId, { studentId }, { new: true });
+    const updated = await User.findByIdAndUpdate(
+      userId,
+      { studentId },
+      { new: true },
+    );
     if (!updated) {
-      return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
+      return NextResponse.json(
+        { error: "ユーザーが見つかりません。" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ studentId: updated.studentId });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });
+    return NextResponse.json(
+      { error: "サーバーエラーです。" },
+      { status: 500 },
+    );
   }
 }

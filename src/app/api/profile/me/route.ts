@@ -1,27 +1,20 @@
 // /src/app/api/profile/me/route.ts
 
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import dbConnect from '@/lib/dbConnect';
+import { getAuthenticatedUserId } from '@/lib/auth';
 import User from '@/models/user';
 import Artwork from '@/models/artwork';
 import Follow from '@/models/follow';
-import jwt from 'jsonwebtoken';
 import { bucket } from '@/lib/gcs';
-import { IUserData } from '@/models/user'; 
+import { IUserData } from '@/models/user';
 
 export async function GET() {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET!;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
-
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    const userId = decoded.id;
 
     await dbConnect();
 
@@ -33,18 +26,18 @@ export async function GET() {
     }
 
     // 2. NSFW設定とミュートタグを基に、作品検索のクエリを作成
-    const artworkQuery: Record<string, unknown> = { 
+    const artworkQuery: Record<string, unknown> = {
       userId,
       tags: { $nin: user.mutedTags || [] }
     };
     if (user.showNSFW !== true) {
       artworkQuery.isNSFW = false;
     }
-    
+
     // 3. フォロワー数と作品一覧を並行して取得
     const [followerCount, artworks] = await Promise.all([
       Follow.countDocuments({ followingId: userId }),
-      Artwork.find(artworkQuery).sort({ createdAt: -1 }).lean() 
+      Artwork.find(artworkQuery).sort({ createdAt: -1 }).lean()
     ]);
 
     // 削除済みユーザーの投稿を除外（通常は発生しないが安全のため）
