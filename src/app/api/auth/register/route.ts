@@ -6,26 +6,19 @@ import { z } from "zod";
 import dbConnect from "@/lib/dbConnect";
 import { isDuplicateKeyError } from "@/lib/dbError";
 import { env } from "@/lib/env";
+import {
+  fullNameSchema,
+  passwordSchema,
+  studentIdSchema,
+  usernameSchema,
+} from "@/lib/schemas/profile";
 import User from "@/models/user";
 
 const registerSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(2, "ユーザー名は2文字以上で入力してください。")
-    .max(50, "ユーザー名が長すぎます。"),
-  fullName: z
-    .string()
-    .trim()
-    .min(2, "本名は2文字以上で入力してください。")
-    .max(100, "本名が長すぎます。"),
-  studentId: z
-    .string()
-    .regex(/^\d{9}$/, "学籍番号は9桁の数字で入力してください。"),
-  password: z
-    .string()
-    .min(6, "パスワードは6文字以上で入力してください。")
-    .max(200, "パスワードが長すぎます。"),
+  username: usernameSchema,
+  fullName: fullNameSchema,
+  studentId: studentIdSchema,
+  password: passwordSchema,
   sharedPassword: z.string().min(1, "共有パスワードを入力してください。"),
 });
 
