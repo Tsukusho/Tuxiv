@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import dbConnect from "@/lib/dbConnect";
+import { isDuplicateKeyError } from "@/lib/dbError";
 import { bucket } from "@/lib/gcs";
 import { fullNameSchema, passwordSchema, studentIdSchema, usernameSchema } from "@/lib/schemas/profile";
 import Artwork from "@/models/artwork";
@@ -105,16 +106,7 @@ export async function PATCH(req: Request) {
       showNSFW?: boolean;
     } = {};
 
-    if (data.username !== undefined) {
-      const existingUser = await User.findOne({
-        username: data.username,
-        _id: { $ne: userId },
-      });
-      if (existingUser) {
-        return NextResponse.json({ error: "このユーザー名は既に使用されています。" }, { status: 409 });
-      }
-      updateData.username = data.username;
-    }
+    if (data.username !== undefined) updateData.username = data.username;
 
     if (data.fullName !== undefined) updateData.fullName = data.fullName;
     if (data.studentId !== undefined) updateData.studentId = data.studentId;
@@ -140,8 +132,16 @@ export async function PATCH(req: Request) {
       showNSFW: updatedUser.showNSFW,
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "サーバーエラーです。" }, { status: 500 });
+    if (isDuplicateKeyError(error)) {
+      const field = Object.keys(error.keyPattern)[0];
+      const messages: Record<string, string> = {
+        username: "このユーザー名は既に使用されています。",
+        studentId: "この学籍番号は既に使用されています。",
+      };
+      return NextResponse.json({ error: messages[field] ?? "重複エラーです。" }, { status: 409 });
+    }
+    console.error("An unexpected error occurred:", error);
+    return NextResponse.json({ error: "サーバーで予期せぬエラーが発生しました。" }, { status: 500 });
   }
 }
 
