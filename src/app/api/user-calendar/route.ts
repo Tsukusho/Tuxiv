@@ -4,7 +4,19 @@ import UserCalendar from "@/models/userCalendar";
 import "@/models/performance";
 import "@/models/performanceType";
 import "@/models/roleType";
+
+import { z } from "zod";
 import { getAuthenticatedUserId } from "@/lib/auth";
+import { objectIdSchema } from "@/lib/schemas/db";
+
+const performanceRoleSchema = z.object({
+  performanceId: objectIdSchema,
+  roleTypeIds: z.array(objectIdSchema).max(20),
+});
+
+const userPerformancesSchema = z.object({
+  performances: z.array(performanceRoleSchema).max(100),
+});
 
 export async function GET() {
   const userId = await getAuthenticatedUserId();
@@ -29,23 +41,18 @@ export async function PUT(request: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: "認証が必要です。" }, { status: 401 });
   }
+  const body = await request.json().catch(() => null);
+  if (body === null) {
+    return NextResponse.json({ error: "リクエストの形式が正しくありません。" }, { status: 400 });
+  }
+
+  const result = userPerformancesSchema.safeParse(body);
+  if (!result.success) return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+  const { performances } = result.data;
 
   await dbConnect();
 
-  const { performances } = await request.json();
-
-  if (!Array.isArray(performances)) {
-    return NextResponse.json(
-      { error: "performances は配列である必要があります" },
-      { status: 400 },
-    );
-  }
-
-  const updated = await UserCalendar.findOneAndUpdate(
-    { userId },
-    { performances },
-    { new: true, upsert: true },
-  )
+  const updated = await UserCalendar.findOneAndUpdate({ userId }, { performances }, { new: true, upsert: true })
     .populate({
       path: "performances.performanceId",
       populate: { path: "typeId" },
