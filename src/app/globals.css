@@ -84,6 +84,13 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-primary:disabled,
+.btn-primary:disabled:hover {
+  background: var(--color-gray-400);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn-secondary {
   background: var(--secondary);
   color: var(--foreground);
