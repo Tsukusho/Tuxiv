@@ -8,6 +8,7 @@ import User from '@/models/user';
 import { IUserData } from '@/models/user';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { env } from '@/lib/env';
 
 // usernameをpropsで受け取る
 type Props = {
@@ -33,7 +34,7 @@ export default async function UserArtworkList({ username }: Props) {
       
       if (token) {
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+          const decoded = jwt.verify(token, env.JWT_SECRET) as { id: string };
           const viewer = await User.findById(decoded.id).select('mutedTags showNSFW');
           if (viewer) {
             mutedTags = viewer.mutedTags || [];

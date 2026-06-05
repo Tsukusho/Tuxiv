@@ -7,6 +7,7 @@ import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { env } from '@/lib/env';
 
 type Props = {
   tags: string;
@@ -31,7 +32,7 @@ export default async function SearchResultsList({ tags }: Props) {
       
       if (token) {
         try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+          const decoded = jwt.verify(token, env.JWT_SECRET) as { id: string };
           const user = await User.findById(decoded.id).select('mutedTags showNSFW');
           if (user) {
             mutedTags = user.mutedTags || [];

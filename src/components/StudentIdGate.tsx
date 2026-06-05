@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Props = {
   isLoggedIn: boolean;
@@ -13,21 +13,21 @@ type Me = {
 };
 
 async function fetchMe(): Promise<Me> {
-  const res = await fetch('/api/users/me', { credentials: 'include' });
-  if (!res.ok) throw new Error('failed to fetch me');
+  const res = await fetch("/api/users/me", { credentials: "include" });
+  if (!res.ok) throw new Error("failed to fetch me");
   return res.json();
 }
 
 async function patchStudentId(studentId: string) {
-  const res = await fetch('/api/profile/me/studentId', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/users/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ studentId }),
-    credentials: 'include',
+    credentials: "include",
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || '登録に失敗しました。');
+    throw new Error(data.error || "登録に失敗しました。");
   }
   return res.json();
 }
@@ -35,10 +35,10 @@ async function patchStudentId(studentId: string) {
 export default function StudentIdGate({ isLoggedIn }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [studentId, setStudentId] = useState('');
+  const [studentId, setStudentId] = useState("");
 
   const { data } = useQuery({
-    queryKey: ['me'],
+    queryKey: ["me"],
     queryFn: fetchMe,
     enabled: isLoggedIn,
   });
@@ -46,7 +46,7 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
   const mutation = useMutation({
     mutationFn: patchStudentId,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       router.refresh();
     },
   });
@@ -64,9 +64,7 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
       <div className="w-full max-w-md card p-8">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">学籍番号を登録してください</h2>
-          <p className="text-gray-600 text-sm mt-2">
-            ログインに必要なため、学籍番号の登録をお願いします
-          </p>
+          <p className="text-gray-600 text-sm mt-2">ログインに必要なため、学籍番号の登録をお願いします</p>
         </div>
 
         <form
@@ -87,7 +85,7 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
               pattern="\d{9}"
               maxLength={9}
               value={studentId}
-              onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ""))}
               required
               className="input-field w-full"
               placeholder="例: 202312345"
@@ -96,9 +94,7 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
             <p className="text-xs text-gray-500 mt-1">
               s以降の20**~から始まる9桁の数字を入力してください。ログイン時に使用します。
             </p>
-            <p className="text-xs text-gray-500 mt-1">
-              卒業生の場合も、在学時の学籍番号の記入をお願いします。
-            </p>
+            <p className="text-xs text-gray-500 mt-1">卒業生の場合も、在学時の学籍番号の記入をお願いします。</p>
           </div>
 
           {mutation.isError && (
@@ -112,7 +108,7 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
             disabled={mutation.isPending}
             className="btn-primary w-full py-3 text-base disabled:opacity-50"
           >
-            {mutation.isPending ? '登録中...' : '登録'}
+            {mutation.isPending ? "登録中..." : "登録"}
           </button>
         </form>
       </div>

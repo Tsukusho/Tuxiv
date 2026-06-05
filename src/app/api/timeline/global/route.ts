@@ -5,26 +5,20 @@ import dbConnect from '@/lib/dbConnect';
 import Artwork, { IArtwork } from '@/models/artwork';
 import User from '@/models/user';
 import { bucket } from '@/lib/gcs';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { getAuthenticatedUserId } from '@/lib/auth';
 import { FilterQuery } from 'mongoose';
 
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = 1000; //todo:ページネーション実装したい
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const userId = decoded.id;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -52,25 +46,25 @@ export async function GET(req: Request) {
 
     // 削除済みユーザーの投稿を除外
     const validArtworks = artworks.filter(artwork => artwork.userId !== null);
-      
+
     const totalArtworks = await Artwork.countDocuments({});
 
     const artworksWithSignedUrls = await Promise.all(
       validArtworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
-            
+
             // 匿名投稿の場合はユーザー情報を削除
             if (artwork.isAnonymous) {
                 delete artworkObject.userId;
             }
-            
+
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({
                     version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
                 });
                 artworkObject.thumbnailUrl = signedUrl;
             }
-            
+
             // プロフィール画像のSigned URLを生成（匿名でない場合のみ）
             if (!artwork.isAnonymous && artworkObject.userId && artworkObject.userId.profileImage?.path) {
               try {
@@ -82,7 +76,7 @@ export async function GET(req: Request) {
                 console.warn('プロフィール画像のSigned URL生成に失敗:', error);
               }
             }
-            
+
             return artworkObject;
         })
     );

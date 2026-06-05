@@ -10,6 +10,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { EventInput, EventApi } from '@fullcalendar/core';
 import jaLocale from '@fullcalendar/core/locales/ja';
+import UserCalendarEditor from './UserCalendarEditor';
 
 interface ScheduleEventData {
   title: string;
@@ -25,7 +26,6 @@ interface AvailabilitySlot {
 
 interface UserAvailability {
   grade: string;
-  roles: string[];
   availableSlots: AvailabilitySlot[];
   lastInputDate?: string;
 }
@@ -64,8 +64,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
   
   const [userName, setUserName] = useState('');
   const [grade, setGrade] = useState('');
-  const [roles, setRoles] = useState('');
-  
+
   const [isProfileSaved, setIsProfileSaved] = useState(false);
 
   const [myEvents, setMyEvents] = useState<EventInput[]>([]);
@@ -151,8 +150,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         
         if (currentUserAvailability) {
           setGrade(currentUserAvailability.grade);
-          setRoles(currentUserAvailability.roles.join(', '));
-          
+
           // 既存のlastInputDateがあれば設定、なければ空文字列
           if (currentUserAvailability.lastInputDate) {
             setLastInputDate(currentUserAvailability.lastInputDate.split('T')[0]);
@@ -301,20 +299,12 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     }));
 
     try {
-        // 🔧 全角・半角カンマ両対応: 表記揺れを防止
-        const normalizedRoles = roles
-          .replace(/、/g, ',')  // 全角カンマを半角に統一
-          .split(',')
-          .map(r => r.trim())
-          .filter(r => r.length > 0);  // 空文字列を除外
-
         const response = await fetch(`/api/schedule/events/${eventId}/availabilities`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               name,
               grade,
-              roles: normalizedRoles,
               availableSlots,
               lastInputDate: lastInputDate // 最終日情報を追加
             })
@@ -907,18 +897,10 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
               </div>
               
               <div className="gcal-form-group">
-                <label className="gcal-label">役職 (カンマ区切り: , または 、)</label>
-                <input
-                  type="text"
-                  placeholder="記録,役者 または 記録、役者"
-                  value={roles}
-                  onChange={e => setRoles(e.target.value)}
-                  disabled={isProfileSaved}
-                  className="gcal-input"
-                />
+                <UserCalendarEditor />
               </div>
-              
-              <button 
+
+              <button
                 onClick={handleProfileSave} 
                 disabled={isProfileSaved} 
                 className={`gcal-btn ${isProfileSaved ? 'gcal-btn-primary' : 'gcal-btn-primary'}`}

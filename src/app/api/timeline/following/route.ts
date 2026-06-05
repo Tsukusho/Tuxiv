@@ -5,26 +5,19 @@ import dbConnect from '@/lib/dbConnect';
 import Artwork, { IArtwork } from '@/models/artwork';
 import Follow from '@/models/follow';
 import User from '@/models/user';
-import jwt from 'jsonwebtoken';
 import { bucket } from '@/lib/gcs';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 import { FilterQuery } from 'mongoose';
 
 export async function GET() {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET!;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    const userId = decoded.id;
-
     await dbConnect();
-    
+
     const currentUser = await User.findById(userId);
     if (!currentUser) {
         return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
@@ -68,7 +61,7 @@ export async function GET() {
                 return artworkObject;
             })
         );
-        
+
         return { user, artworks: artworksWithSignedUrls };
     });
 

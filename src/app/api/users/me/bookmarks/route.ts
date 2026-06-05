@@ -5,22 +5,15 @@ import dbConnect from '@/lib/dbConnect';
 import Bookmark from '@/models/bookmark';
 import User from '@/models/user';
 import Artwork from '@/models/artwork'; // Artworkモデルも必要
-import jwt from 'jsonwebtoken';
 import { bucket } from '@/lib/gcs';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const JWT_SECRET = process.env.JWT_SECRET!;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: '認証トークンが必要です。' }, { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
-
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-    const userId = decoded.id;
 
     await dbConnect();
 
@@ -40,24 +33,24 @@ export async function GET() {
             select: 'username'
         }
       });
-      
+
     // populateしたartworkIdから作品情報だけを取り出す
     const artworks = bookmarks.map(b => b.artworkId);
 
     // フィルタリングを適用
     const filteredArtworks = artworks.filter(artwork => {
       if (!artwork || !artwork.userId) return false; // 削除済みユーザーの投稿を除外
-      
+
       // ミュートタグチェック
       if (artwork.tags && artwork.tags.some((tag: string) => mutedTags.includes(tag))) {
         return false;
       }
-      
+
       // NSFW チェック
       if (!showNSFW && artwork.isNSFW) {
         return false;
       }
-      
+
       return true;
     });
 
@@ -65,12 +58,12 @@ export async function GET() {
     const artworksWithSignedUrls = await Promise.all(
         filteredArtworks.map(async (artwork) => {
             const artworkObject = JSON.parse(JSON.stringify(artwork));
-            
+
             // 匿名投稿の場合はユーザー情報を削除
             if (artwork.isAnonymous) {
                 delete artworkObject.userId;
             }
-            
+
             if (artwork.images && artwork.images.length > 0) {
                 const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({
                     version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
