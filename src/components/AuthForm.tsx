@@ -77,7 +77,7 @@ export default function AuthForm({ isRegister }: Props) {
               <>
                 <div>
                   <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
-                    ユーザー名 <span className="text-red-500">*</span>
+                    ユーザー名 <span className="text-required">*</span>
                   </label>
                   <input 
                     id="username"
@@ -94,7 +94,7 @@ export default function AuthForm({ isRegister }: Props) {
                 </div>
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
-                    本名 <span className="text-red-500">*</span>
+                    本名 <span className="text-required">*</span>
                   </label>
                   <input
                     id="fullName"
@@ -108,7 +108,7 @@ export default function AuthForm({ isRegister }: Props) {
                 </div>
                 <div>
                   <label htmlFor="studentId" className="block text-sm font-semibold text-gray-700 mb-2">
-                    学籍番号 <span className="text-red-500">*</span>
+                    学籍番号 <span className="text-required">*</span>
                   </label>
                   <input
                     id="studentId"
@@ -130,7 +130,7 @@ export default function AuthForm({ isRegister }: Props) {
             ) : (
               <div>
                 <label htmlFor="identifier" className="block text-sm font-semibold text-gray-700 mb-2">
-                  ユーザー名,本名,学籍番号のうちどれか <span className="text-red-500">*</span>
+                  ユーザー名,本名,学籍番号のうちどれか <span className="text-required">*</span>
                 </label>
                 <input 
                   id="identifier"
@@ -146,7 +146,7 @@ export default function AuthForm({ isRegister }: Props) {
 
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                パスワード <span className="text-red-500">*</span>
+                パスワード <span className="text-required">*</span>
               </label>
               <input 
                 id="password"
@@ -162,7 +162,7 @@ export default function AuthForm({ isRegister }: Props) {
             {isRegister && (
               <div>
                 <label htmlFor="sharedPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-                  共有パスワード <span className="text-red-500">*</span>
+                  共有パスワード <span className="text-required">*</span>
                 </label>
                 <input
                   id="sharedPassword"
@@ -180,8 +180,8 @@ export default function AuthForm({ isRegister }: Props) {
             )}
 
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm font-medium">{error}</p>
+              <div className="p-4 bg-error-bg border border-error-border rounded-lg">
+                <p className="text-error text-sm font-medium">{error}</p>
               </div>
             )}
 
