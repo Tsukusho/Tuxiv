@@ -76,7 +76,7 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
         >
           <div>
             <label htmlFor="gateStudentId" className="block text-sm font-semibold text-gray-700 mb-2">
-              学籍番号 <span className="text-red-500">*</span>
+              学籍番号 <span className="text-required">*</span>
             </label>
             <input
               id="gateStudentId"
@@ -98,8 +98,8 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
           </div>
 
           {mutation.isError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm font-medium">{mutation.error.message}</p>
+            <div className="p-4 bg-error-bg border border-error-border rounded-lg">
+              <p className="text-error text-sm font-medium">{mutation.error.message}</p>
             </div>
           )}
 

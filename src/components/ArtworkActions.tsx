@@ -97,7 +97,7 @@ export default function ArtworkActions({ artwork, isOwner }: Props) {
         <div className="pt-4 border-t border-gray-200">
           <button 
             onClick={handleDelete} 
-            className="text-sm text-red-600 hover:text-red-700 hover:underline transition-colors font-medium"
+            className="text-sm text-destructive hover:text-destructive-hover hover:underline transition-colors font-medium"
           >
             この作品を削除する
           </button>

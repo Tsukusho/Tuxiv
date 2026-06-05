@@ -163,7 +163,7 @@ export default function ArtworkForm() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-2">
-                  タイトル <span className="text-red-500">*</span>
+                  タイトル <span className="text-required">*</span>
                 </label>
                 <input
                   id="title" 
@@ -178,7 +178,7 @@ export default function ArtworkForm() {
 
               <div>
                 <label htmlFor="images" className="block text-sm font-semibold text-gray-700 mb-2">
-                  画像ファイル <span className="text-red-500">*</span>
+                  画像ファイル <span className="text-required">*</span>
                 </label>
                 <div className="input-field w-full">
                   <input
@@ -210,7 +210,7 @@ export default function ArtworkForm() {
                     )}
                     
                     {uploadedImages.length > 0 && !isUploading && (
-                      <div className="text-sm text-green-600">
+                      <div className="text-sm text-success">
                         ✓ {uploadedImages.length}個のファイルのアップロードが完了しました
                       </div>
                     )}
@@ -233,7 +233,7 @@ export default function ArtworkForm() {
 
               <div>
                 <label htmlFor="tags" className="block text-sm font-semibold text-gray-700 mb-2">
-                  タグ <span className="text-red-500">*</span>
+                  タグ <span className="text-required">*</span>
                 </label>
                 <input
                   id="tags" 
@@ -278,8 +278,8 @@ export default function ArtworkForm() {
               </div>
 
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-600 text-sm font-medium">{error}</p>
+                <div className="p-4 bg-error-bg border border-error-border rounded-lg">
+                  <p className="text-error text-sm font-medium">{error}</p>
                 </div>
               )}
 

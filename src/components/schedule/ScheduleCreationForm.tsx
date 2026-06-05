@@ -103,7 +103,7 @@ export default function ScheduleCreationForm() {
           + 候補日を追加
         </button>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
       <div>
         <button
           type="submit"

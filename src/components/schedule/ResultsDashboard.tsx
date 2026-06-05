@@ -291,7 +291,7 @@ export default function ResultsDashboard({ eventId }: { eventId: string }) {
   };
 
   if (isLoading) return <div className="text-center p-8">読み込み中...</div>;
-  if (!eventData) return <div className="text-center p-8 text-red-500">イベントが見つかりません</div>;
+  if (!eventData) return <div className="text-center p-8 text-error">イベントが見つかりません</div>;
 
 
   return (

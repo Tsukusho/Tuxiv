@@ -9,7 +9,7 @@ export default function SettingsPage() {
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [mutedTags, setMutedTags] = useState("");
-  const [message, setMessage] = useState("");
+  const [feedback, setFeedback] = useState<{ status: number; text: string } | null>(null);
   const [showNSFW, setShowNSFW] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -39,7 +39,7 @@ export default function SettingsPage() {
     field: "username" | "fullName" | "password" | "mutedTags" | "showNSFW",
   ) => {
     e.preventDefault();
-    setMessage("");
+    setFeedback(null);
 
     let body;
     switch (field) {
@@ -68,19 +68,19 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
-      setMessage(`${field}を更新しました。`);
+      setFeedback({ status: res.status, text: `${field}を更新しました。` });
       if (field === "password") setPassword("");
     } else {
       const data = await res.json();
-      setMessage(`エラー: ${data.error}`);
+      setFeedback({ status: res.status, text: data.error });
     }
   };
 
   const handleStudentIdUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
+    setFeedback(null);
 
-    const res = await fetch("/api/profile/me", {
+    const res = await fetch("/api/users/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ studentId }),
@@ -88,10 +88,10 @@ export default function SettingsPage() {
     });
 
     if (res.ok) {
-      setMessage("学籍番号を更新しました。");
+      setFeedback({ status: res.status, text: "学籍番号を更新しました。" });
     } else {
       const data = await res.json();
-      setMessage(`エラー: ${data.error}`);
+      setFeedback({ status: res.status, text: data.error });
     }
   };
 
@@ -100,7 +100,7 @@ export default function SettingsPage() {
     if (!file) return;
 
     setIsUploadingImage(true);
-    setMessage("");
+    setFeedback(null);
 
     const formData = new FormData();
     formData.append("profileImage", file);
@@ -115,7 +115,7 @@ export default function SettingsPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage("プロフィール画像をアップロードしました。");
+        setFeedback({ status: res.status, text: "プロフィール画像をアップロードしました。" });
         // 新しい画像URLを取得するためにユーザーデータを再取得
         const userRes = await fetch("/api/users/me", { credentials: "include" });
         if (userRes.ok) {
@@ -123,10 +123,10 @@ export default function SettingsPage() {
           setProfileImageUrl(userData.profileImageUrl);
         }
       } else {
-        setMessage(`エラー: ${data.error}`);
+        setFeedback({ status: res.status, text: data.error });
       }
     } catch (error) {
-      setMessage("アップロード中にエラーが発生しました。");
+      setFeedback({ status: 500, text: "アップロード中にエラーが発生しました。" });
     } finally {
       setIsUploadingImage(false);
       // ファイル入力をリセット
@@ -137,7 +137,7 @@ export default function SettingsPage() {
   const handleProfileImageDelete = async () => {
     if (!window.confirm("プロフィール画像を削除しますか？")) return;
 
-    setMessage("");
+    setFeedback(null);
 
     try {
       const res = await fetch("/api/users/me/profile-image", {
@@ -148,13 +148,13 @@ export default function SettingsPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessage("プロフィール画像を削除しました。");
+        setFeedback({ status: res.status, text: "プロフィール画像を削除しました。" });
         setProfileImageUrl(null);
       } else {
-        setMessage(`エラー: ${data.error}`);
+        setFeedback({ status: res.status, text: data.error });
       }
     } catch (error) {
-      setMessage("削除中にエラーが発生しました。");
+      setFeedback({ status: 500, text: "削除中にエラーが発生しました。" });
     }
   };
 
@@ -177,7 +177,15 @@ export default function SettingsPage() {
   return (
     <main className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-3xl font-bold mb-6 border-b pb-2">設定</h1>
-      {message && <p className="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50">{message}</p>}
+      {feedback && (
+        <p
+          className={`p-4 mb-4 text-sm rounded-lg ${
+            feedback.status < 300 ? "text-success bg-success-bg" : "text-error bg-error-bg"
+          }`}
+        >
+          {feedback.text}
+        </p>
+      )}
 
       <div className="space-y-8">
         <div>
@@ -222,7 +230,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleProfileImageDelete}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                      className="px-4 py-2 bg-destructive text-white rounded-md hover:bg-destructive-hover transition-colors"
                     >
                       画像を削除
                     </button>
@@ -326,10 +334,10 @@ export default function SettingsPage() {
                   credentials: "include",
                 });
                 if (res.ok) {
-                  setMessage("NSFW設定を更新しました。");
+                  setFeedback({ status: res.status, text: "NSFW設定を更新しました。" });
                 } else {
                   const data = await res.json();
-                  setMessage(`エラー: ${data.error}`);
+                  setFeedback({ status: res.status, text: data.error });
                 }
               }}
               className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -341,11 +349,15 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold mb-2 text-red-600">アカウント削除</h2>
+          <h2 className="text-xl font-semibold mb-2 text-destructive">アカウント削除</h2>
           <p className="text-sm text-gray-500 mb-2">
             この操作は元に戻せません。アカウントに関連する全てのデータ（投稿作品、いいね、ブックマーク）が完全に削除されます。
           </p>
-          <button onClick={handleDeleteAccount} className="px-4 py-2 bg-red-600 text-white rounded-md">
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            className="px-4 py-2 bg-destructive text-white rounded-md"
+          >
             アカウントを削除する
           </button>
         </div>
