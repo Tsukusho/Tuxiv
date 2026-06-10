@@ -82,9 +82,9 @@ export default function Header({ isLoggedIn }: Props) {
           </Link>
           <div className="hidden lg:flex items-center space-x-6">
             <Link
-              href="/schedule/new"
+              href="/schedule"
               className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                pathname === "/schedule/new" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
+                pathname === "/schedule" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
               }`}
             >
               日程調整
@@ -203,7 +203,7 @@ export default function Header({ isLoggedIn }: Props) {
             {isLoggedIn ? (
               <>
                 <Link
-                  href="/schedule/new"
+                  href="/schedule"
                   className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
                 >
                   日程調整
