@@ -1,20 +1,19 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { fetchClient } from "@/lib/fetchClient";
+
+type CurrentEventResponse = { event: { _id: string } | null };
 
 export default function ScheduleHomePage() {
   const router = useRouter();
-  const [eventId, setEventId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // 現在のマスターイベントをAPIから取得する
-  useEffect(() => {
-    fetch('/api/schedule')
-      .then((res) => res.json())
-      .then((data) => setEventId(data.event?._id ?? null))
-      .finally(() => setIsLoading(false));
-  }, []);
+  const { data, isLoading } = useQuery({
+    queryKey: ["schedule", "current"],
+    queryFn: () => fetchClient<CurrentEventResponse>("/api/schedule"),
+  });
+  const eventId = data?.event?._id ?? null;
 
   if (isLoading) {
     return (
@@ -39,9 +38,7 @@ export default function ScheduleHomePage() {
     <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[70vh]">
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">日程調整</h1>
-        <p className="text-lg text-gray-600 mb-10">
-          サークルの活動予定を調整します。
-        </p>
+        <p className="text-lg text-gray-600 mb-10">サークルの活動予定を調整します。</p>
 
         <div className="flex flex-col md:flex-row gap-6 justify-center">
           {/* 予定を入力/変更するボタン */}
