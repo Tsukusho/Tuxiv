@@ -10,6 +10,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { EventInput, EventApi } from '@fullcalendar/core';
 import jaLocale from '@fullcalendar/core/locales/ja';
+import UserCalendarEditor from './UserCalendarEditor';
 
 interface ScheduleEventData {
   title: string;
@@ -25,13 +26,13 @@ interface AvailabilitySlot {
 
 interface UserAvailability {
   grade: string;
-  roles: string[];
   availableSlots: AvailabilitySlot[];
   lastInputDate?: string;
 }
 
 interface CurrentUser {
   fullName: string;
+  grade?: number;
 }
 
 interface ApiResponse {
@@ -64,9 +65,9 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
   
   const [userName, setUserName] = useState('');
   const [grade, setGrade] = useState('');
-  const [roles, setRoles] = useState('');
-  
+
   const [isProfileSaved, setIsProfileSaved] = useState(false);
+  const [isCalendarSaving, setIsCalendarSaving] = useState(false);
 
   const [myEvents, setMyEvents] = useState<EventInput[]>([]);
   const [inputType, setInputType] = useState<'available' | 'undecided' | 'online'>('available');
@@ -147,12 +148,12 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
         if (currentUser) {
           setUserName(currentUser.fullName);
+          if (currentUser.grade !== undefined && currentUser.grade !== null) {
+            setGrade(String(currentUser.grade));
+          }
         }
-        
+
         if (currentUserAvailability) {
-          setGrade(currentUserAvailability.grade);
-          setRoles(currentUserAvailability.roles.join(', '));
-          
           // 既存のlastInputDateがあれば設定、なければ空文字列
           if (currentUserAvailability.lastInputDate) {
             setLastInputDate(currentUserAvailability.lastInputDate.split('T')[0]);
@@ -301,25 +302,24 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
     }));
 
     try {
-        // 🔧 全角・半角カンマ両対応: 表記揺れを防止
-        const normalizedRoles = roles
-          .replace(/、/g, ',')  // 全角カンマを半角に統一
-          .split(',')
-          .map(r => r.trim())
-          .filter(r => r.length > 0);  // 空文字列を除外
-
-        const response = await fetch(`/api/schedule/events/${eventId}/availabilities`, {
+        // grade は User.grade に保存 (Phase A: Availability ではなく User が正)
+        const [response] = await Promise.all([
+          fetch(`/api/schedule/events/${eventId}/availabilities`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               name,
-              grade,
-              roles: normalizedRoles,
               availableSlots,
               lastInputDate: lastInputDate // 最終日情報を追加
             })
-        });
-        
+          }),
+          fetch('/api/users/me', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ grade: Number(grade) })
+          })
+        ]);
+
         if (response.ok) {
             alert('予定を登録・更新しました！');
         } else {
@@ -340,7 +340,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
   
   if (!eventData) return (
     <div className="flex items-center justify-center h-64">
-      <div className="text-center text-red-500">
+      <div className="text-center text-error">
         <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -508,7 +508,9 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
         /* メインレイアウト */
         .main-layout {
+          --calendar-min: 560px;
           display: flex;
+          flex-wrap: wrap;
           gap: 24px;
           padding: 24px;
           min-height: 100vh;
@@ -521,7 +523,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
         .calendar-container {
           flex: 1;
-          min-width: 0;
+          min-width: var(--calendar-min);
         }
 
         /* FullCalendar カスタマイズ */
@@ -649,6 +651,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
           .calendar-container {
             width: 100%;
+            min-width: 0;
             order: 2;
           }
 
@@ -907,25 +910,19 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
               </div>
               
               <div className="gcal-form-group">
-                <label className="gcal-label">役職 (カンマ区切り: , または 、)</label>
-                <input
-                  type="text"
-                  placeholder="記録,役者 または 記録、役者"
-                  value={roles}
-                  onChange={e => setRoles(e.target.value)}
-                  disabled={isProfileSaved}
-                  className="gcal-input"
-                />
+                <UserCalendarEditor onSavingChange={setIsCalendarSaving} />
               </div>
-              
-              <button 
-                onClick={handleProfileSave} 
-                disabled={isProfileSaved} 
-                className={`gcal-btn ${isProfileSaved ? 'gcal-btn-primary' : 'gcal-btn-primary'}`}
+
+              <button
+                onClick={handleProfileSave}
+                disabled={isProfileSaved}
+                className="gcal-btn gcal-btn-primary"
               >
-                {isProfileSaved ? (
+                {isCalendarSaving ? (
+                  '保存中...'
+                ) : isProfileSaved ? (
                   <>
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     保存済み

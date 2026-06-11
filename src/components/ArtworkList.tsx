@@ -8,6 +8,7 @@ import Artwork from '@/models/artwork';
 import User from '@/models/user';
 import { IUserData } from '@/models/user';
 import { FilterQuery } from 'mongoose';
+import { env } from '@/lib/env';
 
 
 
@@ -28,7 +29,7 @@ export default async function ArtworkList() {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+        const decoded = jwt.verify(token, env.JWT_SECRET) as { id: string };
         const user = await User.findById(decoded.id).lean<IUserData>();
         if (user) {
           mutedTags = user.mutedTags || [];

@@ -1,13 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import logoImage from '../assets/logo.png';
+import { useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import logoImage from "../assets/logo.png";
 
 function SearchForm() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -26,12 +27,23 @@ function SearchForm() {
           placeholder="タグを検索"
           className="input-field w-full pr-12 text-sm placeholder-gray-500"
         />
-        <button 
+        <button
           type="submit"
           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
         </button>
       </div>
@@ -40,19 +52,21 @@ function SearchForm() {
 }
 
 type Props = {
-    isLoggedIn: boolean;
-}
+  isLoggedIn: boolean;
+};
 
 export default function Header({ isLoggedIn }: Props) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    queryClient.clear();
     router.refresh();
   };
-  
+
   // ページ遷移時にメニューを閉じる
   useEffect(() => {
     setIsMenuOpen(false);
@@ -63,54 +77,47 @@ export default function Header({ isLoggedIn }: Props) {
       <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
         {/* ロゴとナビゲーション */}
         <div className="flex items-center space-x-8">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <Image 
-                src={logoImage}
-                alt="Tuxiv Logo" 
-                width={80}
-                height={32}
-                priority
-                placeholder="blur"
-              />
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <Image src={logoImage} alt="Tuxiv Logo" width={80} height={32} priority placeholder="blur" />
+          </Link>
+          <div className="hidden lg:flex items-center space-x-6">
+            <Link
+              href="/schedule"
+              className={`text-sm font-medium transition-colors hover:text-blue-600 ${
+                pathname === "/schedule" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
+              }`}
+            >
+              日程調整
             </Link>
-            <div className="hidden lg:flex items-center space-x-6">
-              <Link 
-                href="/schedule/new" 
-                className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                  pathname === '/schedule/new' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-gray-600'
-                }`}
-              >
-                日程調整
-              </Link>
-              <Link 
-                href="/" 
-                className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                  pathname === '/' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-gray-600'
-                }`}
-              >
-                みんなの作品
-              </Link>
-              {isLoggedIn && (
-                <>
-                  <Link 
-                    href="/following" 
-                    className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                      pathname === '/following' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-gray-600'
-                    }`}
-                  >
-                    フォロー中
-                  </Link>
-                  <Link 
-                    href="/bookmarks" 
-                    className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                      pathname === '/bookmarks' ? 'text-blue-600 border-b-2 border-blue-600 pb-1' : 'text-gray-600'
-                    }`}
-                  >
-                    ブックマーク
-                  </Link>
-                </>
-              )}
-            </div>
+            <Link
+              href="/"
+              className={`text-sm font-medium transition-colors hover:text-blue-600 ${
+                pathname === "/" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
+              }`}
+            >
+              みんなの作品
+            </Link>
+            {isLoggedIn && (
+              <>
+                <Link
+                  href="/following"
+                  className={`text-sm font-medium transition-colors hover:text-blue-600 ${
+                    pathname === "/following" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
+                  }`}
+                >
+                  フォロー中
+                </Link>
+                <Link
+                  href="/bookmarks"
+                  className={`text-sm font-medium transition-colors hover:text-blue-600 ${
+                    pathname === "/bookmarks" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
+                  }`}
+                >
+                  ブックマーク
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         <SearchForm />
@@ -123,14 +130,20 @@ export default function Header({ isLoggedIn }: Props) {
                 <Link href="/artworks/new" className="btn-primary text-sm">
                   投稿する
                 </Link>
-                <Link href="/profile" className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                <Link
+                  href="/profile"
+                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
+                >
                   マイページ
                 </Link>
-                <Link href="/settings" className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                <Link
+                  href="/settings"
+                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
+                >
                   設定
                 </Link>
-                <button 
-                  onClick={handleLogout} 
+                <button
+                  onClick={handleLogout}
                   className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
                 >
                   ログアウト
@@ -147,11 +160,17 @@ export default function Header({ isLoggedIn }: Props) {
               </>
             )}
           </div>
-          <button 
-            onClick={() => setIsMenuOpen(true)} 
+          <button
+            onClick={() => setIsMenuOpen(true)}
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
@@ -159,13 +178,21 @@ export default function Header({ isLoggedIn }: Props) {
       </nav>
 
       {/* ハンバーガーメニュー */}
-      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
         <div className="p-6">
-          <button 
-            onClick={() => setIsMenuOpen(false)} 
+          <button
+            onClick={() => setIsMenuOpen(false)}
             className="float-right mb-6 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -175,26 +202,38 @@ export default function Header({ isLoggedIn }: Props) {
             </Link>
             {isLoggedIn ? (
               <>
-                <Link href="/schedule/new" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                <Link
+                  href="/schedule"
+                  className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
+                >
                   日程調整
                 </Link>
                 <Link href="/profile" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
                   マイページ
                 </Link>
-                <Link href="/artworks/new" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                <Link
+                  href="/artworks/new"
+                  className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
+                >
                   投稿する
                 </Link>
-                <Link href="/following" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                <Link
+                  href="/following"
+                  className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
+                >
                   フォロー中
                 </Link>
-                <Link href="/bookmarks" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
+                <Link
+                  href="/bookmarks"
+                  className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
+                >
                   ブックマーク
                 </Link>
                 <Link href="/settings" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
                   設定
                 </Link>
-                <button 
-                  onClick={handleLogout} 
+                <button
+                  onClick={handleLogout}
                   className="text-left text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
                 >
                   ログアウト
@@ -215,12 +254,7 @@ export default function Header({ isLoggedIn }: Props) {
       </div>
 
       {/* オーバーレイ */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-30 z-40"
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
+      {isMenuOpen && <div className="fixed inset-0 bg-black bg-opacity-30 z-40" onClick={() => setIsMenuOpen(false)} />}
     </header>
   );
 }

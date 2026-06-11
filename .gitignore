@@ -43,3 +43,8 @@ next-env.d.ts
 
 # git
 FETCH_HEAD
+
+#backup
+/backup*
+
+/docs

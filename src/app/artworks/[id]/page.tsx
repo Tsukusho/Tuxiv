@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import Link from "next/link";
 import Image from 'next/image';
+import { env } from "@/lib/env";
 
 interface IImage {
   path: string;
@@ -75,7 +76,7 @@ export default async function ArtworkDetailPage({ params }: { params: Promise<{ 
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+      const decoded = jwt.verify(token, env.JWT_SECRET) as { id: string };
       loggedInUserId = decoded.id;
     }
 

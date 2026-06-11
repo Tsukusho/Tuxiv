@@ -2,31 +2,17 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import { bucket } from '@/lib/gcs';
 import User from '@/models/user';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
-
-/**
- * ユーザーIDを取得するヘルパー関数
- */
-async function getUserIdFromToken(): Promise<string> {
-  const JWT_SECRET = process.env.JWT_SECRET!;
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
-
-  if (!token) {
-    throw new Error('認証トークンが必要です。');
-  }
-
-  const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-  return decoded.id;
-}
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 /**
  * プロフィール画像をアップロードするAPI
  */
 export async function POST(req: Request) {
   try {
-    const userId = await getUserIdFromToken();
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    }
     await dbConnect();
 
     const user = await User.findById(userId);
@@ -82,19 +68,13 @@ export async function POST(req: Request) {
       { new: true }
     );
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'プロフィール画像をアップロードしました。',
       profileImage: updatedUser?.profileImage
     }, { status: 200 });
 
   } catch (error: unknown) {
     console.error('Profile image upload failed:', error);
-
-    if (error instanceof Error) {
-      if (error.message === '認証トークンが必要です。') {
-        return NextResponse.json({ error: error.message }, { status: 401 });
-      }
-    }
 
     return NextResponse.json(
       { error: 'プロフィール画像のアップロード中にエラーが発生しました。' },
@@ -108,7 +88,10 @@ export async function POST(req: Request) {
  */
 export async function DELETE() {
   try {
-    const userId = await getUserIdFromToken();
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    }
     await dbConnect();
 
     const user = await User.findById(userId);
@@ -135,15 +118,9 @@ export async function DELETE() {
   } catch (error: unknown) {
     console.error('Profile image deletion failed:', error);
 
-    if (error instanceof Error) {
-      if (error.message === '認証トークンが必要です。') {
-        return NextResponse.json({ error: error.message }, { status: 401 });
-      }
-    }
-
     return NextResponse.json(
       { error: 'プロフィール画像の削除中にエラーが発生しました。' },
       { status: 500 }
     );
   }
-} 
+}
