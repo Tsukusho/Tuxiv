@@ -22,3 +22,12 @@ export async function fetchClient<T = unknown>(input: RequestInfo | URL, init?: 
   }
   return res.json() as Promise<T>;
 }
+
+// ApiError の body から API が返した error メッセージを取り出す (UI の alert 表示用)。
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const body = error.body as { error?: string } | null;
+    if (body?.error) return body.error;
+  }
+  return fallback;
+}
