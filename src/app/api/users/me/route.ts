@@ -24,6 +24,7 @@ const updateProfileSchema = z
     password: passwordSchema.optional(),
     mutedTags: z.array(z.string().max(500)).max(1000).optional(),
     showNSFW: z.boolean().optional(),
+    grade: z.number().int().min(0).max(999).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "更新するフィールドを指定してください。",
@@ -104,6 +105,7 @@ export async function PATCH(req: Request) {
       hashedPassword?: string;
       mutedTags?: string[];
       showNSFW?: boolean;
+      grade?: number;
     } = {};
 
     if (data.username !== undefined) updateData.username = data.username;
@@ -115,6 +117,7 @@ export async function PATCH(req: Request) {
     }
     if (data.mutedTags !== undefined) updateData.mutedTags = data.mutedTags;
     if (data.showNSFW !== undefined) updateData.showNSFW = data.showNSFW;
+    if (data.grade !== undefined) updateData.grade = data.grade;
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
@@ -130,6 +133,7 @@ export async function PATCH(req: Request) {
       studentId: updatedUser.studentId,
       mutedTags: updatedUser.mutedTags,
       showNSFW: updatedUser.showNSFW,
+      grade: updatedUser.grade,
     });
   } catch (error) {
     if (isDuplicateKeyError(error)) {

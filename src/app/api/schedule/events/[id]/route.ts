@@ -18,7 +18,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const eventId = params.id;
 
     // 2. ログイン中のユーザー情報をDBから取得 (本名のみ)
-    const currentUser = await User.findById(userId).select('fullName').lean();
+    const currentUser = await User.findById(userId).select('fullName grade').lean();
     if (!currentUser) {
         return NextResponse.json({ message: 'ユーザーが見つかりません' }, { status: 404 });
     }
@@ -32,13 +32,23 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     // 4. そのイベントに関連する「全員の」出欠情報を取得
     const allAvailabilities = await Availability.find({ eventId: eventId }).lean();
 
+    // grade は User.grade を正とする (Phase A: Availability.grade ではなく User から注入)
+    const gradeUsers = await User.find({ _id: { $in: allAvailabilities.map((a) => a.userId) } })
+      .select('grade')
+      .lean();
+    const gradeByUser = new Map(gradeUsers.map((u) => [String(u._id), u.grade]));
+    const availabilities = allAvailabilities.map((a) => ({
+      ...a,
+      grade: gradeByUser.get(a.userId.toString())?.toString() ?? a.grade,
+    }));
+
     // 5. 全員の出欠情報の中から「ログイン中のユーザー」のデータだけを探す
-    const currentUserAvailability = allAvailabilities.find(
+    const currentUserAvailability = availabilities.find(
       (avail) => avail.userId.toString() === userId
     );
     return NextResponse.json({
         event,
-        availabilities: allAvailabilities, // allAvailabilitiesをavailabilitiesに変更
+        availabilities,
         currentUser,
         currentUserAvailability // このユーザーの保存済みデータ (なければundefined)
     }, { status: 200 });

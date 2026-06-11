@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import ResultsDashboard from '@/components/schedule/ResultsDashboard';
+import ResultsDashboard from './_components/ResultsDashboard';
 
 export default function ResultsPage() {
   const params = useParams();
