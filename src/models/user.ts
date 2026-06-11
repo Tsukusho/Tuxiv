@@ -5,6 +5,8 @@ export interface IUserData {
   username: string;
   fullName: string;
   studentId?: string;
+  grade?: number;
+  isGraduated?: boolean;
   mutedTags?: string[];
   showNSFW?: boolean;
   profileImage?: {
@@ -20,6 +22,10 @@ export interface IUser extends Document {
   fullName: string;
   studentId?: string;
   hashedPassword: string;
+  isAdmin?: boolean;
+  isGraduated?: boolean;
+  showOBOGPost?: boolean;
+  grade?: number;
   mutedTags?: string[];
   showNSFW?: boolean;
   profileImage?: {
@@ -51,6 +57,21 @@ const UserSchema: Schema = new Schema(
     hashedPassword: {
       type: String,
       required: [true, "Please provide a password."],
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    isGraduated: {
+      type: Boolean,
+      default: false,
+    },
+    showOBOGPost: {
+      type: Boolean,
+      default: true,
+    },
+    grade: {
+      type: Number,
     },
     mutedTags: {
       type: [String],
