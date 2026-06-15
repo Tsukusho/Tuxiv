@@ -23,6 +23,7 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      autoIndex: process.env.NODE_ENV !== "production", // prod は明示同期 (npm run sync-indexes) に任せる
     };
 
     cached.promise = mongoose
