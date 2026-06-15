@@ -1,77 +1,77 @@
 // /src/app/api/timeline/following/route.ts
+// フォロー中ユーザーの作品をユーザー単位でグループ化して返す TL。匿名投稿は除外。
 
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import Artwork, { IArtwork } from '@/models/artwork';
-import Follow from '@/models/follow';
-import User from '@/models/user';
-import { bucket } from '@/lib/gcs';
-import { getAuthenticatedUserId } from '@/lib/auth';
-import { FilterQuery } from 'mongoose';
+import type { FilterQuery, Types } from "mongoose";
+import { NextResponse } from "next/server";
+import { type ArtworkSource, getViewerContext, toArtworkItems } from "@/app/api/timeline/_artworks";
+import Artwork, { type IArtwork } from "@/models/artwork";
+import Follow from "@/models/follow";
+import User from "@/models/user";
+
+// グループ化に userId._id が要るので、populate で取れる _id を足した形。
+type FollowingArtwork = Omit<ArtworkSource, "userId"> & {
+  userId: ArtworkSource["userId"] & { _id: Types.ObjectId };
+};
+
+const PER_USER_LIMIT = 100;
 
 export async function GET() {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    const viewer = await getViewerContext();
+    if (!viewer) {
+      return NextResponse.json({ error: "認証が必要です。" }, { status: 401 });
     }
 
-    await dbConnect();
+    const follows = await Follow.find({ followerId: viewer.userId })
+      .select("followingId")
+      .lean<{ followingId: Types.ObjectId }[]>();
+    const followingIds = follows.map((follow) => follow.followingId);
 
-    const currentUser = await User.findById(userId);
-    if (!currentUser) {
-        return NextResponse.json({ error: 'ユーザーが見つかりません。' }, { status: 404 });
+    if (followingIds.length === 0) {
+      return NextResponse.json({ userArtworks: [] });
     }
-    const mutedTags = currentUser.mutedTags || [];
 
-    const following = await Follow.find({ followerId: userId }).select('followingId');
-    const followingIds = following.map(f => f.followingId);
+    const query: FilterQuery<IArtwork> = {
+      userId: { $in: followingIds },
+      isAnonymous: false, // フォロー TL は匿名投稿を除外
+      ...(viewer.mutedTags.length > 0 && { tags: { $nin: viewer.mutedTags } }),
+      ...(!viewer.showNSFW && { isNSFW: false }),
+    };
 
-    const userArtworksPromises = followingIds.map(async (followingId) => {
-        const user = await User.findById(followingId).select('username');
-        if (!user) return null;
-        const query: FilterQuery<IArtwork> = {
-          userId: followingId,
-          isAnonymous: false, // 匿名投稿を除外
-          tags: { $nin: mutedTags },
-        };
-        if (currentUser.showNSFW !== true) {
-          query.isNSFW = false;
-        }
+    const data = await Artwork.find(query)
+      .sort({ createdAt: -1 })
+      .select({
+        images: { $slice: 1 },
+        title: 1,
+        tags: 1,
+        isNSFW: 1,
+        isAnonymous: 1,
+        likeCount: 1,
+        commentCount: 1,
+        createdAt: 1,
+        userId: 1,
+      })
+      .populate({ path: "userId", select: "username profileImage", model: User })
+      .lean<FollowingArtwork[]>();
 
-        const artworks = await Artwork.find(query)
-        .sort({ createdAt: -1 })
-        .limit(100); // 各ユーザーごとに最新100件を取得
+    const groups = new Map<string, { username: string; items: FollowingArtwork[] }>();
+    for (const artwork of data) {
+      const key = String(artwork.userId._id);
+      const group = groups.get(key) ?? { username: artwork.userId.username, items: [] };
+      if (group.items.length < PER_USER_LIMIT) group.items.push(artwork);
+      groups.set(key, group);
+    }
 
-        // 削除済みユーザーの投稿を除外（通常following内では発生しないが安全のため）
-        const validArtworks = artworks.filter(artwork => artwork.userId);
+    const userArtworks = await Promise.all(
+      [...groups.entries()].map(async ([id, group]) => ({
+        user: { _id: id, username: group.username },
+        artworks: await toArtworkItems(group.items),
+      })),
+    );
 
-        if (validArtworks.length === 0) return null;
-
-        // 署名付きURLを生成
-        const artworksWithSignedUrls = await Promise.all(
-            validArtworks.map(async (artwork) => {
-                const artworkObject = JSON.parse(JSON.stringify(artwork));
-                if (artwork.images && artwork.images.length > 0) {
-                    const [signedUrl] = await bucket.file(artwork.images[0].path).getSignedUrl({
-                        version: 'v4', action: 'read', expires: Date.now() + 15 * 60 * 1000,
-                    });
-                    artworkObject.thumbnailUrl = signedUrl;
-                }
-                return artworkObject;
-            })
-        );
-
-        return { user, artworks: artworksWithSignedUrls };
-    });
-
-    // 全てのユーザーの作品取得処理が完了するのを待つ
-    const userArtworksGroups = (await Promise.all(userArtworksPromises)).filter(Boolean);
-
-    return NextResponse.json({ userArtworks: userArtworksGroups });
-
+    return NextResponse.json({ userArtworks });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'サーバーエラーです。' }, { status: 500 });
+    return NextResponse.json({ error: "サーバーエラーです。" }, { status: 500 });
   }
 }
