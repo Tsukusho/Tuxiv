@@ -13,7 +13,7 @@ export default function FollowButton({ targetUserId }: Props) {
   useEffect(() => {
     const checkFollowStatus = async () => {
       try {
-        const res = await fetch(`/api/users/${targetUserId}/follow`, {
+        const res = await fetch(`/api/follows/${targetUserId}`, {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
         });
@@ -38,7 +38,7 @@ export default function FollowButton({ targetUserId }: Props) {
     const previousFollowState = isFollowing;
     setIsFollowing(!previousFollowState);
 
-    const endpoint = `/api/users/${targetUserId}/follow`;
+    const endpoint = `/api/follows/${targetUserId}`;
     const method = previousFollowState ? 'DELETE' : 'POST';
 
     try {
