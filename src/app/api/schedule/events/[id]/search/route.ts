@@ -1,30 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { getAuthenticatedUserId } from "@/lib/auth";
 import dbConnect from "@/lib/dbConnect";
-import { objectIdSchema } from "@/lib/schemas/db";
 import Availability from "@/models/availability";
 import Performance from "@/models/performance";
-import PerformanceType from "@/models/performanceType";
 import RoleType from "@/models/roleType";
 import User from "@/models/user";
 import UserCalendar from "@/models/userCalendar";
 
 // populate の ref を確実に登録する (未参照だと MissingSchemaError になるため)
 void Performance;
-void PerformanceType;
 void RoleType;
-
-// 公演×役職は「公演1つ + その役職複数」を1セットとし、複数セットは AND で結合する。
-const groupSchema = z.object({
-  performanceId: objectIdSchema,
-  roleTypeIds: z.array(objectIdSchema).optional().default([]),
-});
-const searchSchema = z.object({
-  groups: z.array(groupSchema).optional().default([]),
-  grades: z.array(z.number().int()).optional().default([]),
-  userIds: z.array(objectIdSchema).optional().default([]),
-});
 
 interface PopulatedRole {
   _id: { toString(): string };
@@ -61,19 +46,13 @@ interface Member {
 
 const performanceLabel = (p: PopulatedPerformance) => `${p.year}年度 ${p.displayName}`;
 
-export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const userId = await getAuthenticatedUserId();
   if (!userId) {
     return NextResponse.json({ error: "認証が必要です。" }, { status: 401 });
   }
 
   const { id: eventId } = await context.params;
-  const body = await request.json().catch(() => null);
-  const parsed = searchSchema.safeParse(body ?? {});
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
-  }
-  const { groups, grades, userIds } = parsed.data;
 
   await dbConnect();
 
@@ -90,7 +69,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       .select("fullName grade isGraduated")
       .lean<{ _id: { toString(): string }; fullName: string; grade?: number; isGraduated?: boolean }[]>(),
     UserCalendar.find({ userId: { $in: memberUserIds } })
-      .populate({ path: "performances.performanceId", populate: { path: "typeId" } })
+      .populate("performances.performanceId")
       .populate("performances.roleTypeIds")
       .lean<PopulatedCalendar[]>(),
   ]);
@@ -98,8 +77,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
   const calendarMap = new Map(calendars.map((c) => [c.userId.toString(), c]));
 
-  // 3. member 構築 (卒業者は検索から除外)
-  const allMembers: Member[] = availabilities.flatMap((a) => {
+  // 3. member 構築 (卒業者は除外)
+  const members: Member[] = availabilities.flatMap((a) => {
     const uid = a.userId.toString();
     const user = userMap.get(uid);
     if (user?.isGraduated) return [];
@@ -127,26 +106,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     ];
   });
 
-  // 4. フィルタ。公演×役職セットは AND (全セット合致)、各セットは同一 entry で判定。
-  const gradeSet = new Set(grades);
-  const userSet = new Set(userIds);
-
-  const matchesGroup = (m: Member, group: { performanceId: string; roleTypeIds: string[] }) => {
-    const roleSet = new Set(group.roleTypeIds);
-    return m.performances.some(
-      (p) => p.id === group.performanceId && (roleSet.size === 0 || p.roleTypes.some((r) => roleSet.has(r.id))),
-    );
-  };
-
-  const members = allMembers.filter(
-    (m) =>
-      groups.every((g) => matchesGroup(m, g)) &&
-      (gradeSet.size === 0 || (m.grade !== null && gradeSet.has(m.grade))) &&
-      (userSet.size === 0 || userSet.has(m.userId)),
-  );
-
-  // 5. facets は未フィルタ集合から (選択肢 + 人数)
-  const facets = buildFacets(allMembers);
+  const facets = buildFacets(members);
 
   return NextResponse.json({ members, facets });
 }
