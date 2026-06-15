@@ -22,9 +22,7 @@ export async function getAuthenticatedUserId(): Promise<string | null> {
 
 // 管理者ゲート。未ログインは 401、ログイン済みだが非管理者は 403 を区別して返す
 // (401 はクライアントでログインへ、403 は権限エラー表示、と扱いが分かれるため)
-export type AdminGate =
-  | { ok: true; userId: string }
-  | { ok: false; status: 401 | 403; error: string };
+export type AdminGate = { ok: true; userId: string } | { ok: false; status: 401 | 403; error: string };
 
 export async function requireAdmin(): Promise<AdminGate> {
   const userId = await getAuthenticatedUserId();
