@@ -60,4 +60,8 @@ const ArtworkSchema: Schema = new Schema({
   commentCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
+// フィードの cursor ページネーション用。createdAt: global TL、userId+createdAt: following / user-profile。
+ArtworkSchema.index({ createdAt: -1 });
+ArtworkSchema.index({ userId: 1, createdAt: -1 });
+
 export default mongoose.models.Artwork || mongoose.model<IArtwork>('Artwork', ArtworkSchema);
