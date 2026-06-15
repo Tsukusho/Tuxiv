@@ -56,6 +56,8 @@ export default function FilterPanel({
         return { ...g, roleTypeIds: on ? g.roleTypeIds.filter((r) => r !== roleId) : [...g.roleTypeIds, roleId] };
       }),
     );
+  const setGroupRoles = (index: number, roleTypeIds: string[]) =>
+    setDraftGroups(draftGroups.map((g, i) => (i === index ? { ...g, roleTypeIds } : g)));
 
   const toggleGrade = (value: number, checked: boolean) =>
     setDraftGrades(checked ? [...draftGrades, value] : draftGrades.filter((v) => v !== value));
@@ -147,9 +149,34 @@ export default function FilterPanel({
                 </div>
               ))}
 
-            <button type="button" onClick={() => removeGroup(i)} className="text-xs text-red-600">
-              × このセットを削除
-            </button>
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={() => removeGroup(i)} className="text-xs text-red-600">
+                × このセットを削除
+              </button>
+              {g.performanceId && roleOptions(g.performanceId).length > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGroupRoles(
+                        i,
+                        roleOptions(g.performanceId).map((r) => r.value),
+                      )
+                    }
+                    className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200"
+                  >
+                    全選択
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGroupRoles(i, [])}
+                    className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200"
+                  >
+                    全解除
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ))}
         <button
