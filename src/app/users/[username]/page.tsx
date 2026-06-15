@@ -1,24 +1,17 @@
-import UserArtworkList from '@/components/UserArtworkList';
-import { Suspense } from 'react';
+import UserArtworks from "./_components/UserArtworks";
 
 type Props = {
   params: Promise<{ username: string }>;
-}
+};
 
 export default async function UserPage({ params }: Props) {
   const { username } = await params;
-
   const decodedUsername = decodeURIComponent(username);
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 border-b pb-2 break-words">
-        {decodedUsername}さんの作品
-      </h1>
-      <Suspense fallback={<p className="text-center">読み込み中...</p>}>
-        {/* ArtworkListを再利用し、新しいAPIのエンドポイントを渡す */}
-        <UserArtworkList username={decodedUsername} />
-      </Suspense>
+      <h1 className="text-3xl font-bold mb-6 border-b pb-2 break-words">{decodedUsername}さんの作品</h1>
+      <UserArtworks username={decodedUsername} />
     </main>
   );
 }
