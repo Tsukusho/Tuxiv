@@ -74,7 +74,9 @@ export default function AuthForm({ isRegister }: Props) {
                   </label>
                   <input
                     id="username"
+                    name="username"
                     type="text"
+                    autoComplete="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -89,7 +91,9 @@ export default function AuthForm({ isRegister }: Props) {
                   </label>
                   <input
                     id="fullName"
+                    name="fullName"
                     type="text"
+                    autoComplete="name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
@@ -103,7 +107,9 @@ export default function AuthForm({ isRegister }: Props) {
                   </label>
                   <input
                     id="studentId"
+                    name="studentId"
                     type="text"
+                    autoComplete="off"
                     inputMode="numeric"
                     pattern="\d{9}"
                     maxLength={9}
@@ -125,7 +131,9 @@ export default function AuthForm({ isRegister }: Props) {
                 </label>
                 <input
                   id="identifier"
+                  name="identifier"
                   type="text"
+                  autoComplete="username"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   required
@@ -141,7 +149,9 @@ export default function AuthForm({ isRegister }: Props) {
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
+                autoComplete={isRegister ? "new-password" : "current-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -157,7 +167,9 @@ export default function AuthForm({ isRegister }: Props) {
                 </label>
                 <input
                   id="sharedPassword"
+                  name="sharedPassword"
                   type="password"
+                  autoComplete="off"
                   value={sharedPassword}
                   onChange={(e) => setSharedPassword(e.target.value)}
                   required
