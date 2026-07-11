@@ -3,10 +3,7 @@ import { getAuthenticatedUserId } from "@/lib/auth";
 import dbConnect from "@/lib/dbConnect";
 import Availability from "@/models/availability";
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const params = await context.params;
   try {
     // 認証チェック
@@ -19,27 +16,19 @@ export async function POST(
     const eventId = params.id;
 
     // リクエストボディからデータを取得
-    const { name, grade, roles, availableSlots, lastInputDate } =
-      await request.json();
+    const { name, grade, roles, availableSlots, lastInputDate } = await request.json();
 
     // availableSlotsの各スロットにtypeフィールドが存在することを確認
-    const slotsWithType = availableSlots.map(
-      (slot: { start: string; end: string; type?: string }) => ({
-        start: slot.start,
-        end: slot.end,
-        type: slot.type || "available", // 明示的にデフォルト値を設定
-      }),
-    );
+    const slotsWithType = availableSlots.map((slot: { start: string; end: string; type?: string }) => ({
+      start: slot.start,
+      end: slot.end,
+      type: slot.type || "available", // 明示的にデフォルト値を設定
+    }));
 
     const validTypes = ["available", "undecided", "online"];
-    const invalidSlots = slotsWithType.filter(
-      (s: { type: string }) => !validTypes.includes(s.type),
-    );
+    const invalidSlots = slotsWithType.filter((s: { type: string }) => !validTypes.includes(s.type));
     if (invalidSlots.length > 0) {
-      return NextResponse.json(
-        { message: "無効なステータスタイプが含まれています" },
-        { status: 400 },
-      );
+      return NextResponse.json({ message: "無効なステータスタイプが含まれています" }, { status: 400 });
     }
 
     // "Upsert"処理: データがあれば更新、なければ新規作成
@@ -64,9 +53,6 @@ export async function POST(
     return NextResponse.json(updatedAvailability, { status: 200 });
   } catch (error) {
     console.error("出欠情報保存エラー:", error);
-    return NextResponse.json(
-      { message: "サーバーエラーが発生しました" },
-      { status: 500 },
-    );
+    return NextResponse.json({ message: "サーバーエラーが発生しました" }, { status: 500 });
   }
 }
