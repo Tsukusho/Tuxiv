@@ -58,8 +58,10 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
 
   // 1. この event の出欠 (新コードは availableSlots と userId だけ使う / 旧 name,grade,roles は読まない)
   const availabilities = await Availability.find({ eventId })
-    .select("userId availableSlots")
-    .lean<{ userId: { toString(): string }; availableSlots: Member["availableSlots"] }[]>();
+    .select("userId availableSlots lastInputDate")
+    .lean<
+      { userId: { toString(): string }; availableSlots: Member["availableSlots"]; lastInputDate?: Date | null }[]
+    >();
 
   const memberUserIds = availabilities.map((a) => a.userId);
 
@@ -101,7 +103,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
         grade: user?.grade ?? null,
         performances,
         availableSlots: a.availableSlots,
-        lastInputDate: cal?.lastInputDate ?? null,
+        lastInputDate: a?.lastInputDate ?? null,
       },
     ];
   });
