@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
 // TODO: AvailabilityInputのリファクタ
 // API、フォーム、カレンダーをそれぞれhook化,モバイル制御をutilsに切り出し
 
-import { useState, useEffect, useCallback } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import { EventInput, EventApi } from '@fullcalendar/core';
-import jaLocale from '@fullcalendar/core/locales/ja';
-import UserCalendarEditor from './UserCalendarEditor';
+import type { EventApi, EventInput } from "@fullcalendar/core";
+import jaLocale from "@fullcalendar/core/locales/ja";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import { useCallback, useEffect, useState } from "react";
+import UserCalendarEditor from "./UserCalendarEditor";
 
 interface ScheduleEventData {
   title: string;
@@ -21,7 +21,7 @@ interface ScheduleEventData {
 interface AvailabilitySlot {
   start: string;
   end: string;
-  type: 'available' | 'undecided' | 'online';
+  type: "available" | "undecided" | "online";
 }
 
 interface UserAvailability {
@@ -62,32 +62,31 @@ interface EventClickInfo {
 export default function AvailabilityInput({ eventId }: { eventId: string }) {
   const [eventData, setEventData] = useState<ScheduleEventData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const [userName, setUserName] = useState('');
-  const [grade, setGrade] = useState('');
+
+  const [userName, setUserName] = useState("");
+  const [grade, setGrade] = useState("");
 
   const [isProfileSaved, setIsProfileSaved] = useState(false);
   const [isCalendarSaving, setIsCalendarSaving] = useState(false);
 
   const [myEvents, setMyEvents] = useState<EventInput[]>([]);
-  const [inputType, setInputType] = useState<'available' | 'undecided' | 'online'>('available');
-  const [lastInputDate, setLastInputDate] = useState<string>(''); // 予定入力最終日
+  const [inputType, setInputType] = useState<"available" | "undecided" | "online">("available");
+  const [lastInputDate, setLastInputDate] = useState<string>(""); // 予定入力最終日
 
   // タッチイベント制御用のstate
   const [isMobile, setIsMobile] = useState(false);
   const [isInputMode, setIsInputMode] = useState(false);
   const [firstTapTime, setFirstTapTime] = useState<string | null>(null);
 
-
   // モバイル判定
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // スマホ用の時間セル選択処理
@@ -104,7 +103,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
       // 2回目のタップ：予定を作成
       const start = new Date(firstTapTime);
       const end = new Date(clickedTime);
-      
+
       // 開始時刻と終了時刻を正しい順序に調整
       const finalStart = start <= end ? start : end;
       const finalEnd = start <= end ? end : start;
@@ -122,10 +121,10 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
           calendar: {
             unselect: () => {},
             addEvent: (event: EventInput) => {
-              setMyEvents(prev => [...prev, event]);
-            }
-          }
-        }
+              setMyEvents((prev) => [...prev, event]);
+            },
+          },
+        },
       };
 
       handleDateSelect(selectInfo);
@@ -141,8 +140,8 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
       setIsLoading(true);
       try {
         const res = await fetch(`/api/schedule/events/${eventId}`);
-        if (!res.ok) throw new Error('データ取得に失敗');
-        
+        if (!res.ok) throw new Error("データ取得に失敗");
+
         const { event, currentUser, currentUserAvailability }: ApiResponse = await res.json();
         setEventData(event);
 
@@ -156,19 +155,19 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         if (currentUserAvailability) {
           // 既存のlastInputDateがあれば設定、なければ空文字列
           if (currentUserAvailability.lastInputDate) {
-            setLastInputDate(currentUserAvailability.lastInputDate.split('T')[0]);
+            setLastInputDate(currentUserAvailability.lastInputDate.split("T")[0]);
           }
-          
-          const getEventStyle = (type: 'available' | 'undecided' | 'online') => {
+
+          const getEventStyle = (type: "available" | "undecided" | "online") => {
             switch (type) {
-              case 'available':
-                return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
-              case 'undecided':
-                return { title: '未定', backgroundColor: '#ffa726', borderColor: '#ff9800' };
-              case 'online':
-                return { title: 'オンライン可能', backgroundColor: '#4caf50', borderColor: '#388e3c' };
+              case "available":
+                return { title: "参加可能", backgroundColor: "#1976d2", borderColor: "#1565c0" };
+              case "undecided":
+                return { title: "未定", backgroundColor: "#ffa726", borderColor: "#ff9800" };
+              case "online":
+                return { title: "オンライン可能", backgroundColor: "#4caf50", borderColor: "#388e3c" };
               default:
-                return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
+                return { title: "参加可能", backgroundColor: "#1976d2", borderColor: "#1565c0" };
             }
           };
 
@@ -180,13 +179,12 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
               end: slot.end,
               backgroundColor: style.backgroundColor,
               borderColor: style.borderColor,
-              textColor: '#ffffff',
-              extendedProps: { type: slot.type }
+              textColor: "#ffffff",
+              extendedProps: { type: slot.type },
             };
           });
           setMyEvents(savedEvents);
         }
-        
       } catch (error) {
         console.error(error);
       } finally {
@@ -198,7 +196,7 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
   const handleProfileSave = () => {
     if (!grade.trim()) {
-      alert('学年(代)は必須です');
+      alert("学年(代)は必須です");
       return;
     }
     setIsProfileSaved(true);
@@ -206,21 +204,21 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
   const handleDateSelect = (selectInfo: DateSelectInfo) => {
     if (!isProfileSaved) {
-      alert('先に「プロフィールを保存して次に進む」ボタンを押してください。');
+      alert("先に「プロフィールを保存して次に進む」ボタンを押してください。");
       return;
     }
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
-    const getEventStyle = (type: 'available' | 'undecided' | 'online') => {
+    const getEventStyle = (type: "available" | "undecided" | "online") => {
       switch (type) {
-        case 'available':
-          return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
-        case 'undecided':
-          return { title: '未定', backgroundColor: '#ffa726', borderColor: '#ff9800' };
-        case 'online':
-          return { title: 'オンライン可能', backgroundColor: '#4caf50', borderColor: '#388e3c' };
+        case "available":
+          return { title: "参加可能", backgroundColor: "#1976d2", borderColor: "#1565c0" };
+        case "undecided":
+          return { title: "未定", backgroundColor: "#ffa726", borderColor: "#ff9800" };
+        case "online":
+          return { title: "オンライン可能", backgroundColor: "#4caf50", borderColor: "#388e3c" };
         default:
-          return { title: '参加可能', backgroundColor: '#1976d2', borderColor: '#1565c0' };
+          return { title: "参加可能", backgroundColor: "#1976d2", borderColor: "#1565c0" };
       }
     };
     const style = getEventStyle(inputType);
@@ -231,35 +229,35 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
       end: selectInfo.endStr,
       backgroundColor: style.backgroundColor,
       borderColor: style.borderColor,
-      textColor: '#ffffff',
-      extendedProps: { type: inputType }
+      textColor: "#ffffff",
+      extendedProps: { type: inputType },
     };
     calendarApi.addEvent(newEvent);
   };
-  
+
   // 予定追加時にlastInputDateを自動更新する関数
   const updateLastInputDate = useCallback(() => {
     if (myEvents.length > 0) {
       try {
         // AvailabilitySlotから日付を取得（APIに送信する形式を使用）
-        const availableSlots = myEvents.map(e => ({ 
-          start: e.start, 
-          end: e.end, 
-          type: e.extendedProps?.type || 'available' 
+        const availableSlots = myEvents.map((e) => ({
+          start: e.start,
+          end: e.end,
+          type: e.extendedProps?.type || "available",
         }));
-        
-        const allDates = availableSlots.flatMap(slot => [
+
+        const allDates = availableSlots.flatMap((slot) => [
           new Date(slot.start as string),
-          new Date(slot.end as string)
+          new Date(slot.end as string),
         ]);
-        
+
         if (allDates.length > 0) {
-          const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-          const dateStr = maxDate.toISOString().split('T')[0];
-          setLastInputDate(dateStr);
+          const maxDate = new Date(Math.max(...allDates.map((d) => d.getTime())));
+          const dateStr = maxDate.toISOString().split("T")[0];
+          if (dateStr > lastInputDate) setLastInputDate(dateStr);
         }
       } catch (error) {
-        console.warn('lastInputDate自動更新でエラー:', error);
+        console.warn("lastInputDate自動更新でエラー:", error);
       }
     }
   }, [myEvents]);
@@ -280,74 +278,81 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         backgroundColor: e.backgroundColor,
         borderColor: e.borderColor,
         textColor: e.textColor,
-        extendedProps: e.extendedProps as { type?: 'available' | 'undecided' | 'online' },
+        extendedProps: e.extendedProps as { type?: "available" | "undecided" | "online" },
       }));
 
     if (JSON.stringify(plainEvents) !== JSON.stringify(myEvents)) {
-        setMyEvents(plainEvents);
+      setMyEvents(plainEvents);
     }
   };
-  
+
   const handleAvailabilitySubmit = async () => {
-    const name = userName; 
+    const name = userName;
     if (myEvents.length === 0) {
-      if (!confirm('空き時間を1つも選択していませんが、このまま「全て不参加」として登録しますか？')) {
+      if (!confirm("空き時間を1つも選択していませんが、このまま「全て不参加」として登録しますか？")) {
         return;
       }
     }
-    const availableSlots = myEvents.map(e => ({ 
-        start: e.start, 
-        end: e.end, 
-        type: e.extendedProps?.type || 'available' 
+    const availableSlots = myEvents.map((e) => ({
+      start: e.start,
+      end: e.end,
+      type: e.extendedProps?.type || "available",
     }));
 
     try {
-        // grade は User.grade に保存 (Phase A: Availability ではなく User が正)
-        const [response] = await Promise.all([
-          fetch(`/api/schedule/events/${eventId}/availabilities`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name,
-              availableSlots,
-              lastInputDate: lastInputDate // 最終日情報を追加
-            })
+      // grade は User.grade に保存 (Phase A: Availability ではなく User が正)
+      const [response] = await Promise.all([
+        fetch(`/api/schedule/events/${eventId}/availabilities`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            availableSlots,
+            lastInputDate: lastInputDate, // 最終日情報を追加
           }),
-          fetch('/api/users/me', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ grade: Number(grade) })
-          })
-        ]);
+        }),
+        fetch("/api/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ grade: Number(grade) }),
+        }),
+      ]);
 
-        if (response.ok) {
-            alert('予定を登録・更新しました！');
-        } else {
-            throw new Error('API応答エラー');
-        }
+      if (response.ok) {
+        alert("予定を登録・更新しました！");
+      } else {
+        throw new Error("API応答エラー");
+      }
     } catch (error) {
-        console.error(error);
-        alert('登録に失敗しました');
+      console.error(error);
+      alert("登録に失敗しました");
     }
   };
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <span className="ml-3 text-gray-600">読み込み中...</span>
-    </div>
-  );
-  
-  if (!eventData) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="text-center text-error">
-        <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p>イベントが見つかりません</p>
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">読み込み中...</span>
       </div>
-    </div>
-  );
+    );
+
+  if (!eventData)
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center text-error">
+          <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <p>イベントが見つかりません</p>
+        </div>
+      </div>
+    );
 
   return (
     <div className="google-calendar-container">
@@ -880,75 +885,78 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
         {/* Google Calendar ライクなサイドバー */}
         <div className="sidebar-container">
           <div className="gcal-sidebar">
-            
             <div className="gcal-profile-section">
               <h3 className="text-lg font-medium text-gray-900 mb-4">プロフィール情報</h3>
-              
+
               <div className="gcal-form-group">
                 <label className="gcal-label">お名前</label>
-                <input 
-                  type="text" 
-                  value={userName} 
-                  readOnly 
+                <input
+                  type="text"
+                  value={userName}
+                  readOnly
                   className="gcal-input"
-                  style={{ background: '#f8f9fa', cursor: 'not-allowed' }}
+                  style={{ background: "#f8f9fa", cursor: "not-allowed" }}
                 />
               </div>
-              
+
               <div className="gcal-form-group">
                 <label className="gcal-label">
-                  学年(代) <span style={{ color: '#d93025' }}>*</span>
+                  学年(代) <span style={{ color: "#d93025" }}>*</span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="3" 
-                  value={grade} 
-                  onChange={e => setGrade(e.target.value)}
+                <input
+                  type="number"
+                  placeholder="3"
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value)}
                   disabled={isProfileSaved}
                   className="gcal-input"
                 />
               </div>
-              
+
               <div className="gcal-form-group">
                 <UserCalendarEditor onSavingChange={setIsCalendarSaving} />
               </div>
 
-              <button
-                onClick={handleProfileSave}
-                disabled={isProfileSaved}
-                className="gcal-btn gcal-btn-primary"
-              >
+              <button onClick={handleProfileSave} disabled={isProfileSaved} className="gcal-btn gcal-btn-primary">
                 {isCalendarSaving ? (
-                  '保存中...'
+                  "保存中..."
                 ) : isProfileSaved ? (
                   <>
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     保存済み
                   </>
                 ) : (
-                  '次のステップへ進む'
+                  "次のステップへ進む"
                 )}
               </button>
             </div>
-            
+
             <div className="gcal-action-section">
               <h3 className="text-lg font-medium text-gray-900 mb-3">空き時間の入力</h3>
-              
+
               {/* スマホ版ヒント */}
               {isMobile && (
                 <div className="mobile-hint">
                   <div className="hint-icon">💡</div>
-                  <strong>スマホでの操作方法：</strong><br />
+                  <strong>スマホでの操作方法：</strong>
+                  <br />
                   {isInputMode ? (
                     <>
-                      • 1回目タップ：開始時刻を選択<br />
-                      • 2回目タップ：終了時刻を選択し予定を作成<br />
-                      {firstTapTime && <span style={{color: '#d93025'}}>• 次のタップで終了時刻を選択してください</span>}
+                      • 1回目タップ：開始時刻を選択
+                      <br />• 2回目タップ：終了時刻を選択し予定を作成
+                      <br />
+                      {firstTapTime && (
+                        <span style={{ color: "#d93025" }}>• 次のタップで終了時刻を選択してください</span>
+                      )}
                     </>
                   ) : (
-                    '• 入力モードをONにして時刻を選択してください'
+                    "• 入力モードをONにして時刻を選択してください"
                   )}
                 </div>
               )}
@@ -956,58 +964,56 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
               {/* スマホ版入力モード切り替えボタン */}
               {isMobile && (
                 <div className="mobile-input-toggle">
-                  <button 
+                  <button
                     onClick={() => {
                       setIsInputMode(!isInputMode);
                       setFirstTapTime(null);
                     }}
-                    className={`input-mode-btn ${isInputMode ? 'active' : ''}`}
+                    className={`input-mode-btn ${isInputMode ? "active" : ""}`}
                     disabled={!isProfileSaved}
                   >
-                    <span className="input-mode-icon">
-                      {isInputMode ? '📍' : '⏰'}
-                    </span>
-                    {isInputMode ? '入力モード ON' : '入力モード OFF'}
+                    <span className="input-mode-icon">{isInputMode ? "📍" : "⏰"}</span>
+                    {isInputMode ? "入力モード ON" : "入力モード OFF"}
                   </button>
                 </div>
               )}
-              
+
               <p className="text-sm text-gray-600 mb-4">
-                {isMobile 
-                  ? 'カレンダーで参加可能な時間を指でタップ&ドラッグして選択してください。'
-                  : 'カレンダーで参加可能な時間をドラッグして選択してください。'
-                }
+                {isMobile
+                  ? "カレンダーで参加可能な時間を指でタップ&ドラッグして選択してください。"
+                  : "カレンダーで参加可能な時間をドラッグして選択してください。"}
               </p>
-              
+
               {/* 最終日選択UI */}
               <div className="gcal-form-group mb-4">
                 <label className="gcal-label">
                   予定入力最終日 <span className="text-xs text-gray-500">(この日まで入力したことを記録)</span>
                 </label>
-                <input 
-                  type="date" 
-                  value={lastInputDate} 
-                  onChange={e => setLastInputDate(e.target.value)}
+                <input
+                  type="date"
+                  value={lastInputDate}
+                  onChange={(e) => setLastInputDate(e.target.value)}
                   className="gcal-input"
-                  style={{ 
-                    fontSize: '16px', // モバイル対応
-                    background: '#f8f9fa',
-                    border: '2px solid #e8eaed',
-                    borderRadius: '8px',
-                    padding: '12px 16px'
+                  style={{
+                    fontSize: "16px", // モバイル対応
+                    background: "#f8f9fa",
+                    border: "2px solid #e8eaed",
+                    borderRadius: "8px",
+                    padding: "12px 16px",
                   }}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   予定を入力した最後の日付を選択してください。この日以降は「未入力」として結果に表示されます。
                 </p>
               </div>
-              
-              <button 
-                onClick={handleAvailabilitySubmit} 
-                className="gcal-btn gcal-btn-success"
-              >
+
+              <button onClick={handleAvailabilitySubmit} className="gcal-btn gcal-btn-success">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 登録・更新する
               </button>
@@ -1017,29 +1023,37 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
 
         {/* Google Calendar ライクなカレンダー */}
         <div className="calendar-container">
-          <div className={`gcal-calendar-container gcal-disabled-overlay ${!isProfileSaved ? 'disabled' : ''}`}>
+          <div className={`gcal-calendar-container gcal-disabled-overlay ${!isProfileSaved ? "disabled" : ""}`}>
             <div className="gcal-calendar-header">
               <h3 className="text-lg font-medium text-gray-900">カレンダー</h3>
-              <button 
-                onClick={() => setInputType(current => current === 'available' ? 'undecided' : current === 'undecided' ? 'online' : 'available')}
+              <button
+                onClick={() =>
+                  setInputType((current) =>
+                    current === "available" ? "undecided" : current === "undecided" ? "online" : "available",
+                  )
+                }
                 className={`gcal-mode-toggle ${inputType}`}
               >
-                {inputType === 'available' ? '参加可能モード' : inputType === 'undecided' ? '未定モード' : 'オンラインモード'}
+                {inputType === "available"
+                  ? "参加可能モード"
+                  : inputType === "undecided"
+                    ? "未定モード"
+                    : "オンラインモード"}
               </button>
             </div>
-            
-            <div className={`mobile-calendar-wrapper ${
-              isMobile && isInputMode ? 'input-mode' : ''
-            } ${
-              isMobile && firstTapTime ? 'awaiting-second-tap' : ''
-            }`}>
+
+            <div
+              className={`mobile-calendar-wrapper ${isMobile && isInputMode ? "input-mode" : ""} ${
+                isMobile && firstTapTime ? "awaiting-second-tap" : ""
+              }`}
+            >
               <div className="p-4">
                 <FullCalendar
                   plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                   headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'timeGridWeek,timeGridDay'
+                    left: "prev,next today",
+                    center: "title",
+                    right: "timeGridWeek,timeGridDay",
                   }}
                   initialView="timeGridWeek"
                   locale={jaLocale}
@@ -1050,10 +1064,10 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
                   scrollTime="09:00:00"
                   slotDuration="00:30:00"
                   slotLabelInterval="01:00:00"
-                  dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
+                  dayHeaderFormat={{ weekday: "short", day: "numeric" }}
                   dayHeaderClassNames={(arg) => {
-                    if (arg.date.getDay() === 0) return ['fc-day-sun'];
-                    if (arg.date.getDay() === 6) return ['fc-day-sat'];
+                    if (arg.date.getDay() === 0) return ["fc-day-sun"];
+                    if (arg.date.getDay() === 6) return ["fc-day-sat"];
                     return [];
                   }}
                   events={myEvents}
@@ -1064,15 +1078,15 @@ export default function AvailabilityInput({ eventId }: { eventId: string }) {
                   eventsSet={handleEventsSet}
                   eventClick={(clickInfo: EventClickInfo) => {
                     if (!isProfileSaved) return;
-                    if(confirm(`この予定「${clickInfo.event.title}」を削除しますか？`)){
-                      clickInfo.event.remove()
+                    if (confirm(`この予定「${clickInfo.event.title}」を削除しますか？`)) {
+                      clickInfo.event.remove();
                     }
                   }}
                   nowIndicator={true}
                   slotLabelFormat={{
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    meridiem: false
+                    hour: "numeric",
+                    minute: "2-digit",
+                    meridiem: false,
                   }}
                   dateClick={handleTimeSlotClick}
                 />
