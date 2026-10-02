@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BaseButton } from "@/components/base/Button";
 import type { FilterGroup, SearchFacets, SearchFilter } from "../_types/search";
 
 interface Opt {
@@ -290,16 +291,12 @@ export default function FilterPanel({
       </details>
 
       <div className="pt-4 border-t flex gap-2">
-        <button type="button" onClick={clearAll} className="flex-1 text-sm py-2 rounded-md border hover:bg-gray-50">
+        <BaseButton variant="secondary" shape="static" onClick={clearAll} className="flex-1">
           すべて解除
-        </button>
-        <button
-          type="button"
-          onClick={applyFilters}
-          className="flex-1 text-sm py-2 rounded-md bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
-        >
+        </BaseButton>
+        <BaseButton shape="static" onClick={applyFilters} className="flex-1">
           適用
-        </button>
+        </BaseButton>
       </div>
     </div>
   );

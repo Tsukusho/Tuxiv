@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BaseButton } from "@/components/base/Button";
 
 type Props = {
   isLoggedIn: boolean;
@@ -103,13 +104,9 @@ export default function StudentIdGate({ isLoggedIn }: Props) {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="btn-primary w-full py-3 text-base disabled:opacity-50"
-          >
+          <BaseButton type="submit" disabled={mutation.isPending} shape="round" className="w-full">
             {mutation.isPending ? "登録中..." : "登録"}
-          </button>
+          </BaseButton>
         </form>
       </div>
     </div>

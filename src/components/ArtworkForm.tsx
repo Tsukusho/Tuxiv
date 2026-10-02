@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { BaseButton } from '@/components/base/Button';
 
 interface UploadedImage {
   fileName: string;
@@ -283,16 +284,17 @@ export default function ArtworkForm() {
                 </div>
               )}
 
-              <button 
-                type="submit" 
-                disabled={isSubmitting || isUploading || uploadedImages.length === 0} 
-                className="btn-primary w-full py-3 text-base disabled:bg-gray-300 disabled:cursor-not-allowed"
+              <BaseButton
+                type="submit"
+                disabled={isSubmitting || isUploading || uploadedImages.length === 0}
+                shape="round"
+                className="w-full"
               >
                 {isSubmitting ? '投稿中...' : 
                  isUploading ? 'アップロード中...' : 
                  uploadedImages.length === 0 ? '画像をアップロードしてください' :
                  '作品を投稿する'}
-              </button>
+              </BaseButton>
             </form>
           </div>
         </div>

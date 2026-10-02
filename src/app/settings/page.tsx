@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BaseButton } from "@/components/base/Button";
 
 export default function SettingsPage() {
   const [username, setUsername] = useState("");
@@ -227,13 +228,9 @@ export default function SettingsPage() {
                 </div>
                 {profileImageUrl && (
                   <div>
-                    <button
-                      type="button"
-                      onClick={handleProfileImageDelete}
-                      className="px-4 py-2 bg-destructive text-white rounded-md hover:bg-destructive-hover transition-colors"
-                    >
+                    <BaseButton variant="danger" shape="static" onClick={handleProfileImageDelete}>
                       画像を削除
-                    </button>
+                    </BaseButton>
                   </div>
                 )}
                 <p className="text-xs text-gray-500">JPG、PNG、GIF形式（5MB以下）</p>
@@ -252,9 +249,9 @@ export default function SettingsPage() {
             required
             className="w-full px-3 py-2 border rounded-md mb-2"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">
+          <BaseButton type="submit" shape="static">
             更新
-          </button>
+          </BaseButton>
         </form>
 
         {/* フルネーム変更機能はフロント側には出さない。登録時間違えたユーザーは運営側が直接クエリ叩くか、怖い場合はこのコメントアウトを外してください
@@ -280,9 +277,9 @@ export default function SettingsPage() {
             placeholder="ex:202312345"
             className="w-full px-3 py-2 border rounded-md mb-2"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">
+          <BaseButton type="submit" shape="static">
             更新
-          </button>
+          </BaseButton>
         </form>
 
         <form onSubmit={(e) => handleUpdate(e, "password")}>
@@ -295,9 +292,9 @@ export default function SettingsPage() {
             placeholder="新しいパスワード"
             className="w-full px-3 py-2 border rounded-md mb-2"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">
+          <BaseButton type="submit" shape="static">
             更新
-          </button>
+          </BaseButton>
         </form>
 
         <form onSubmit={(e) => handleUpdate(e, "mutedTags")}>
@@ -311,9 +308,9 @@ export default function SettingsPage() {
             onChange={(e) => setMutedTags(e.target.value)}
             className="w-full px-3 py-2 border rounded-md mb-2"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">
+          <BaseButton type="submit" shape="static">
             更新
-          </button>
+          </BaseButton>
         </form>
 
         <div>
@@ -353,13 +350,9 @@ export default function SettingsPage() {
           <p className="text-sm text-gray-500 mb-2">
             この操作は元に戻せません。アカウントに関連する全てのデータ（投稿作品、いいね、ブックマーク）が完全に削除されます。
           </p>
-          <button
-            type="button"
-            onClick={handleDeleteAccount}
-            className="px-4 py-2 bg-destructive text-white rounded-md"
-          >
+          <BaseButton variant="danger" shape="static" onClick={handleDeleteAccount}>
             アカウントを削除する
-          </button>
+          </BaseButton>
         </div>
       </div>
     </main>
