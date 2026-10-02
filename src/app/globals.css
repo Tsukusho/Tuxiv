@@ -5,7 +5,8 @@
   --foreground: #2c2c2c;
   --primary: #0096fa;
   --primary-hover: #0070cc;
-  --secondary: #f0f0f0;
+  --secondary: #313131;
+  --secondary-hover: #1b1b1b;
   --border: #e6e6e6;
   --border-hover: #d0d0d0;
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -20,6 +21,8 @@
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
 
   --color-success: var(--color-green-700);
   --color-success-bg: var(--color-green-50);
@@ -43,6 +46,7 @@
     --background: #1a1a1a;
     --foreground: #f0f0f0;
     --secondary: #2a2a2a;
+    --secondary-hover: #333333;
     --border: #404040;
     --border-hover: #505050;
   }

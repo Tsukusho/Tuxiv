@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BaseButton } from '@/components/base/Button';
 
 export default function TagEditor({ artworkId, initialTags }: { artworkId: string; initialTags: string[] }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,9 +49,9 @@ export default function TagEditor({ artworkId, initialTags }: { artworkId: strin
             onChange={(e) => setInput(e.target.value)}
             placeholder="カンマ区切りで入力 (例: 風景, 夜空)"
           />
-          <button className="btn-primary" onClick={onSave} disabled={saving}>
+          <BaseButton shape="round" onClick={onSave} disabled={saving}>
             {saving ? '保存中...' : '保存'}
-          </button>
+          </BaseButton>
         </div>
       )}
     </div>

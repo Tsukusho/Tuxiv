@@ -1,14 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { BaseLink } from "@/components/base/Link";
 import { fetchClient } from "@/lib/fetchClient";
 
 type CurrentEventResponse = { event: { _id: string } | null };
 
 export default function ScheduleHomePage() {
-  const router = useRouter();
-
   const { data, isLoading } = useQuery({
     queryKey: ["schedule", "current"],
     queryFn: () => fetchClient<CurrentEventResponse>("/api/schedule"),
@@ -41,21 +39,13 @@ export default function ScheduleHomePage() {
         <p className="text-lg text-gray-600 mb-10">サークルの活動予定を調整します。</p>
 
         <div className="flex flex-col md:flex-row gap-6 justify-center">
-          {/* 予定を入力/変更するボタン */}
-          <button
-            onClick={() => router.push(`/schedule/event/${eventId}`)}
-            className="bg-indigo-600 text-white font-semibold py-4 px-8 rounded-lg shadow-lg hover:bg-indigo-700 transform hover:-translate-y-1 transition-all duration-300 ease-in-out"
-          >
+          <BaseLink variant="primary" shape="base" href={`/schedule/event/${eventId}`}>
             予定を入力 / 変更する
-          </button>
+          </BaseLink>
 
-          {/* 入力者の予定を確認するボタン */}
-          <button
-            onClick={() => router.push(`/schedule/event/${eventId}/results`)}
-            className="bg-gray-700 text-white font-semibold py-4 px-8 rounded-lg shadow-lg hover:bg-gray-800 transform hover:-translate-y-1 transition-all duration-300 ease-in-out"
-          >
+          <BaseLink variant="secondary" shape="base" href={`/schedule/event/${eventId}/results`}>
             みんなの予定を確認する
-          </button>
+          </BaseLink>
         </div>
       </div>
     </div>

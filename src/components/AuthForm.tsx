@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { BaseButton } from "@/components/base/Button";
 
 type Props = {
   isRegister: boolean;
@@ -186,9 +187,9 @@ export default function AuthForm({ isRegister }: Props) {
               </div>
             )}
 
-            <button type="submit" disabled={isPending} className="btn-primary w-full py-3 text-base">
+            <BaseButton type="submit" disabled={isPending} shape="round" className="w-full">
               {isPending ? (isRegister ? "作成中..." : "ログイン中...") : isRegister ? "アカウントを作成" : "ログイン"}
-            </button>
+            </BaseButton>
           </form>
 
           <div className="mt-6 text-center">
