@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import logoImage from "../assets/logo.png";
+import { BaseButton } from "./base/Button";
+import { BaseLink } from "./base/Link";
 
 function SearchForm() {
   const [query, setQuery] = useState("");
@@ -51,6 +53,22 @@ function SearchForm() {
   );
 }
 
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  return (
+    <BaseLink
+      href={href}
+      variant="none"
+      shape="none"
+      aria-current={pathname === href ? "page" : undefined}
+      className="aria-[current=page]:text-blue-600 aria-[current=page]:border-b-2 aria-[current=page]:border-blue-600 aria-[current=page]:pb-1"
+    >
+      {children}
+    </BaseLink>
+  );
+}
+
 type Props = {
   isLoggedIn: boolean;
 };
@@ -81,40 +99,12 @@ export default function Header({ isLoggedIn }: Props) {
             <Image src={logoImage} alt="Tuxiv Logo" width={80} height={32} priority placeholder="blur" />
           </Link>
           <div className="hidden lg:flex items-center space-x-6">
-            <Link
-              href="/schedule"
-              className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                pathname === "/schedule" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
-              }`}
-            >
-              日程調整
-            </Link>
-            <Link
-              href="/"
-              className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                pathname === "/" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
-              }`}
-            >
-              みんなの作品
-            </Link>
+            <NavLink href="/schedule">日程調整</NavLink>
+            <NavLink href="/">みんなの作品</NavLink>
             {isLoggedIn && (
               <>
-                <Link
-                  href="/following"
-                  className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                    pathname === "/following" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
-                  }`}
-                >
-                  フォロー中
-                </Link>
-                <Link
-                  href="/bookmarks"
-                  className={`text-sm font-medium transition-colors hover:text-blue-600 ${
-                    pathname === "/bookmarks" ? "text-blue-600 border-b-2 border-blue-600 pb-1" : "text-gray-600"
-                  }`}
-                >
-                  ブックマーク
-                </Link>
+                <NavLink href="/following">フォロー中</NavLink>
+                <NavLink href="/bookmarks">ブックマーク</NavLink>
               </>
             )}
           </div>
@@ -127,36 +117,27 @@ export default function Header({ isLoggedIn }: Props) {
           <div className="hidden md:flex items-center space-x-3">
             {isLoggedIn ? (
               <>
-                <Link href="/artworks/new" className="btn-primary text-sm">
+                <BaseLink href="/artworks/new" variant="primary" shape="round" className="text-sm">
                   投稿する
-                </Link>
-                <Link
-                  href="/profile"
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
-                >
+                </BaseLink>
+                <BaseLink href="/profile" variant="none" shape="none">
                   マイページ
-                </Link>
-                <Link
-                  href="/settings"
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
-                >
+                </BaseLink>
+                <BaseLink href="/settings" variant="none" shape="none">
                   設定
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium"
-                >
+                </BaseLink>
+                <BaseButton onClick={handleLogout} variant="none" shape="none">
                   ログアウト
-                </button>
+                </BaseButton>
               </>
             ) : (
               <>
-                <Link href="/login" className="text-sm text-gray-600 hover:text-blue-600 transition-colors font-medium">
+                <BaseLink href="/login" variant="primary" shape="round">
                   ログイン
-                </Link>
-                <Link href="/register" className="btn-secondary text-sm">
+                </BaseLink>
+                <BaseLink href="/register" variant="secondary" shape="round">
                   新規登録
-                </Link>
+                </BaseLink>
               </>
             )}
           </div>
@@ -202,10 +183,7 @@ export default function Header({ isLoggedIn }: Props) {
             </Link>
             {isLoggedIn ? (
               <>
-                <Link
-                  href="/schedule"
-                  className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2"
-                >
+                <Link href="/schedule" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">
                   日程調整
                 </Link>
                 <Link href="/profile" className="text-gray-800 hover:text-blue-600 transition-colors font-medium py-2">

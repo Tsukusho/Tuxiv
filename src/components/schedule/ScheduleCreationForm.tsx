@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { BaseButton } from '@/components/base/Button';
 
 export default function ScheduleCreationForm() {
   const [title, setTitle] = useState('');
@@ -105,13 +106,9 @@ export default function ScheduleCreationForm() {
       </div>
       {error && <p className="text-sm text-error">{error}</p>}
       <div>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-        >
+        <BaseButton type="submit" disabled={isSubmitting} shape="static">
           {isSubmitting ? '作成中...' : 'イベントを作成'}
-        </button>
+        </BaseButton>
       </div>
     </form>
   );

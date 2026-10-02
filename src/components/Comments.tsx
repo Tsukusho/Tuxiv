@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BaseButton } from '@/components/base/Button';
 
 // コメントデータの型
 interface ICommentData {
@@ -67,13 +68,9 @@ export default function Comments({ artworkId }: { artworkId: string }) {
           rows={3}
         />
         <div className="flex justify-end">
-          <button 
-            type="submit" 
-            disabled={isPosting || !newComment.trim()} 
-            className="btn-primary text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
+          <BaseButton type="submit" disabled={isPosting || !newComment.trim()} shape="round">
             {isPosting ? '投稿中...' : 'コメントする'}
-          </button>
+          </BaseButton>
         </div>
       </form>
 
