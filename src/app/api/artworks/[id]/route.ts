@@ -54,8 +54,9 @@ export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  await dbConnect();
+
   const session = await mongoose.startSession();
-  session.startTransaction();
   try {
     const userId = await getAuthenticatedUserId();
     if (!userId) {
@@ -67,8 +68,6 @@ export async function DELETE(
 
     const { id } = await context.params;
     const artworkId = id;
-
-    await dbConnect();
 
     const artwork = await Artwork.findById(artworkId).session(session);
     if (!artwork) {
@@ -86,24 +85,25 @@ export async function DELETE(
       );
     }
 
-    // 1. GCSから画像ファイルを削除
-    const deletePromises = artwork.images.map((image: { path: string }) =>
-      bucket.file(image.path).delete(),
+    // DB削除してからGCS削除,トランザクションで囲えないため.
+    await session.withTransaction(async () => {
+      await Like.deleteMany({ artworkId }).session(session);
+      await Bookmark.deleteMany({ artworkId }).session(session);
+      await Comment.deleteMany({ artworkId }).session(session);
+      await Artwork.findByIdAndDelete(artworkId).session(session);
+    });
+
+    const paths:string[] = artwork.images.map((image:{path:string})=>image.path);
+
+    const results = await Promise.allSettled(
+      paths.map((p)=>bucket.file(p).delete({ignoreNotFound:true})),
     );
-    await Promise.all(deletePromises);
 
-    // 2. 関連データを削除
-    await Like.deleteMany({ artworkId }).session(session);
-    await Bookmark.deleteMany({ artworkId }).session(session);
-    await Comment.deleteMany({ artworkId }).session(session); // コメントも削除
-
-    // 3. 作品自体を削除
-    await Artwork.findByIdAndDelete(artworkId).session(session);
-
-    await session.commitTransaction();
+    results.forEach((r,i)=>{
+      if (r.status === 'rejected') console.error('GCS削除失敗,孤立）:', paths[i], r.reason);
+    });
     return NextResponse.json({ message: "作品を削除しました。" });
   } catch (error) {
-    await session.abortTransaction();
     console.error(error);
     return NextResponse.json(
       { error: "作品の削除中にエラーが発生しました。" },
