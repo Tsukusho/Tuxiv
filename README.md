@@ -55,6 +55,11 @@ npm run dev
 - `GCS_PRIVATE_KEY` - GCS サービスアカウントの秘密鍵
 - `GCS_BUCKET_NAME` - GCS バケット名
 
+なお同一クラスタに複数のDBがあります
+本番 `test` / staging `test_staging`
+MONGODB_URIは以下の形式になっているため,本番に接続する以下のクラスタ名を変更してください.
+"mongodb+srv://tsukushoweb:パスワード@tuxiv-cluster.xxxxx.mongodb.net/<クラスタ名>?retryWrites=true&w=majority&appName=tuxiv-cluster"
+
 ## DB インデックス
 
 本番は `autoIndex` を無効化しているため（起動時の意図しないビルドを避けるため）、Mongoose スキーマの index 宣言を変更したら、デプロイ後に同期スクリプトを手動実行する:
